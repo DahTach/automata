@@ -1,0 +1,30 @@
+[project]
+name = "automata"
+version = "0.1.0"
+description = "Automatic Dataset Labeling"
+authors = [
+    {name = "DahTach", email = "francesco.tacinelli@gmail.com"},
+]
+dependencies = [
+    "torch>=2.3.1",
+    "torchvision>=0.18.1",
+    "matplotlib>=3.9.0",
+    "opencv-python>=4.10.0.84",
+    "autodistill>=0.1.28",
+    "autodistill-grounding-dino>=0.1.4",
+    "progressbar>=2.5",
+    "gradio>=4.36.1",
+    "langchain-core>=0.2.9",
+    "langchain-groq>=0.1.5",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
