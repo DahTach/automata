@@ -22,20 +22,22 @@ class Dino:
         self.device = self.get_device()
         self.distill_cache_dir = os.path.expanduser("~/.cache/autodistill")
         self.cache = os.path.join(self.distill_cache_dir, "groundingdino")
-        self.config = os.path.join(self.cache, "GroundingDINO_SwinT_OGC.py")
-        self.checkpoint = os.path.join(self.cache, "groundingdino_swint_ogc.pth")
         self.version = "B" if size == "big" else "T"
+        self.config = self.get_config()
+        self.checkpoint = self.get_checkpoint()
         self.load()
 
     def get_config(self):
         if self.version == "B":
-            return "GroundingDINO_SwinB_cfg.py"
-        return "GroundingDINO_SwinT_CogCoor.py"
+            return os.path.join(self.cache, "GroundingDINO_SwinB_cfg.py")
+        return os.path.join(self.cache, "GroundingDINO_SwinT_OGC.py")
 
     def get_checkpoint(self):
         if self.version == "B":
-            return "groundingdino_swinb_cogcoor.pth"
-        return "groundingdino_swint_ogc.pth"
+            print("using swinB")
+            return os.path.join(self.cache, "groundingdino_swinb_cogcoor.pth")
+        print("using swinT")
+        return os.path.join(self.cache, "groundingdino_swint_ogc.pth")
 
     def get_device(self):
         if torch.cuda.is_available():
