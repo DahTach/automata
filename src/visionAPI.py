@@ -98,8 +98,8 @@ detector = gr.Interface(
             choices=dataset.classnames,
             type="index",
         ),
-        gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.1),
-        gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.1),
+        gr.Slider(minimum=0, maximum=1.0, step=0.01, value=0.1),
+        gr.Slider(minimum=0, maximum=1.0, step=0.01, value=0.1),
     ],
     outputs=[
         gr.Label(label=None),
