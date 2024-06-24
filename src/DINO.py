@@ -13,6 +13,7 @@ from groundingdino.util.slconfig import SLConfig
 from groundingdino.util.utils import get_phrases_from_posmap
 from PIL import Image
 import utils
+from tqdm import tqdm
 
 
 class Dino:
@@ -124,6 +125,48 @@ class Dino:
 
         return boxes
 
+    def predict_batch(
+        self,
+        image: np.ndarray,
+        prompts: dict,
+        box_threshold: float = 0.25,
+        text_threshold: float = 0.25,
+    ):
+        """
+        Predicts bounding boxes for a batch of prompts.
+        """
+        predictions = {}
+
+        for key, value in tqdm(prompts.items()):
+            detections = [
+                torch.tensor([]).to(self.device),
+                torch.tensor([]).to(self.device),
+                [],
+            ]
+
+            prompt = " . ".join(value)
+
+            boxes, scores = self.model.predict(
+                image=image,
+                prompt=prompt,
+                box_threshold=box_threshold,
+                text_threshold=text_threshold,
+            )
+
+            detections[0] = torch.cat((detections[0], boxes), dim=0)
+            # TODO: check if confidences is a tensor and what is inside
+            detections[1] = torch.cat((detections[1], scores), dim=0)
+
+            # extend class_ids with the same class for each box
+            # detections[2] = torch.tensor([prompt] * len(boxes)).to(self.device)
+            detections[2].extend([prompt] * len(detections[0]))
+
+            filtered_detections = self.nms(detections)
+
+            predictions[key] = filtered_detections
+
+        return predictions
+
     def nms(
         self,
         detections,
@@ -131,7 +174,11 @@ class Dino:
         containment_threshold=0.8,
         size_deviation_threshold=1.5,
     ):
-        all_boxes = detections[0]
+        all_boxes = torchvision.ops.box_convert(
+            detections[0], in_fmt="cxcywh", out_fmt="xyxy"
+        )
+        # all_boxes = detections[0]
+
         all_scores = detections[1]
         all_prompts = detections[2]
 
