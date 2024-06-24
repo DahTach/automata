@@ -61,14 +61,14 @@ class Dino:
                 model_checkpoint_path=self.checkpoint,
             )
         except Exception as e:
-            print(f"Occured error: {e}")
+            print(f"Error loading model: {e}")
             print("downloading dino model weights")
             if not os.path.exists(self.cache):
                 os.makedirs(self.cache)
 
             if not os.path.exists(self.checkpoint):
                 if self.version == "B":
-                    url = "https://github.com/IDEA-Research/GroundingDINO/releases/tag/v0.1.0-alpha2/groundingdino_swinb_cogcoor.pth"
+                    url = "https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha2/groundingdino_swinb_cogcoor.pth"
                 else:
                     url = "https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth"
                 urllib.request.urlretrieve(url, self.checkpoint, utils.show_progress)
@@ -342,7 +342,7 @@ class DinoModel(Model):
         args = SLConfig.fromfile(model_config_path)
         # args.device = self.device
         model = build_model(args)
-        checkpoint = torch.load(model_checkpoint_path, map_location="cpu")
+        checkpoint = torch.load(model_checkpoint_path, map_location=self.device)
         model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
         model.eval()
         return model
