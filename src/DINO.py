@@ -41,7 +41,8 @@ class Dino:
             return "cuda"
         if torch.backends.mps.is_available() and torch.backends.mps.is_built():
             print("using cpu because mps is not fully supported yet")
-            return "cpu"
+            # TODO: replace with cpu when device fixed
+            return "mps"
         else:
             print("using cpu")
             return "cpu"
@@ -52,7 +53,6 @@ class Dino:
             self.model = DinoModel(
                 model_config_path=self.config,
                 model_checkpoint_path=self.checkpoint,
-                device=self.device,
             )
         except Exception as e:
             print(f"Occured error: {e}")
@@ -77,7 +77,6 @@ class Dino:
             self.model = DinoModel(
                 model_config_path=self.config,
                 model_checkpoint_path=self.checkpoint,
-                device=self.device,
             )
 
     def preprocess_image(self, image_bgr: np.ndarray) -> torch.Tensor:
@@ -185,21 +184,16 @@ class Dino:
 
 
 class DinoModel(Model):
-    def __init__(
-        self, model_config_path: str, model_checkpoint_path: str, device: str = "cuda"
-    ):
+    def __init__(self, model_config_path: str, model_checkpoint_path: str):
+        self.device = utils.get_device()
         self.model = self.load_model(
             model_config_path=model_config_path,
             model_checkpoint_path=model_checkpoint_path,
-            device=device,
-        ).to(device)
-        self.device = device
+        ).to(self.device)
 
-    def load_model(
-        self, model_config_path: str, model_checkpoint_path: str, device: str = "cpu"
-    ):
+    def load_model(self, model_config_path: str, model_checkpoint_path: str):
         args = SLConfig.fromfile(model_config_path)
-        args.device = device
+        # args.device = self.device
         model = build_model(args)
         checkpoint = torch.load(model_checkpoint_path, map_location="cpu")
         model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
@@ -221,7 +215,6 @@ class DinoModel(Model):
             caption=caption,
             box_threshold=box_threshold,
             text_threshold=text_threshold,
-            device=self.device,
         )
 
         return boxes, scores
@@ -239,10 +232,9 @@ class DinoModel(Model):
         caption: str,
         box_threshold: float,
         text_threshold: float,
-        device: str = "cpu",
     ) -> Tuple:
-        model = model.to(device)
-        image = image.to(device)
+        model = model.to(self.device)
+        image = image.to(self.device)
 
         with torch.no_grad():
             outputs = model(image[None], captions=[caption])

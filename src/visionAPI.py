@@ -75,7 +75,7 @@ detector = gr.Interface(
 
 
 def run():
-    detector.launch(allowed_paths=[DATASET_PATH])
+    detector.launch(allowed_paths=[DATASET_PATH], share=True, show_error=True)
 
 
 if __name__ == "__main__":
