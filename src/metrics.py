@@ -82,7 +82,7 @@ def confusion_matrix(
             boxes=torch.tensor(class_grs),
             in_fmt="cxcywh",
             out_fmt="xyxy",
-        )
+        ).to(class_prs.device)
         # pr_bbxs = torch.stack(class_prs, dim=0)
         pr_bbxs = class_prs
 
