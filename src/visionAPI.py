@@ -8,13 +8,14 @@ import time
 from typing import Any
 
 
+cwd = os.getcwd()
+
+SAMPLE_DATASET_PATH = os.path.join(cwd, "dataset_sample")
+
 # dataset = Dataset("/Users/francescotacinelli/Developer/datasets/pallets_sorted/labeled/images/")
 
 try:
-    DATASET_PATH = (
-        os.getenv("DATASET_PATH")
-        or "/Users/francescotacinelli/Developer/datasets/pallets_sorted/labeled/images/"
-    )
+    DATASET_PATH = os.getenv("DATASET_PATH") or SAMPLE_DATASET_PATH
     if not DATASET_PATH:
         raise ValueError("DATASET_PATH is not set")
     dataset = Dataset(DATASET_PATH)
