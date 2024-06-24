@@ -40,6 +40,8 @@ class Dino:
     def get_device(self):
         if torch.cuda.is_available():
             print("using cuda")
+            os.environ["TORCH_USE_CUDA_DSA"] = "1"
+            os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
             return "cuda"
         if torch.backends.mps.is_available() and torch.backends.mps.is_built():
             print("using cpu because mps is not fully supported yet")
@@ -300,9 +302,7 @@ class Dino:
                     break
 
         # Update keep_indices, removing those with high containment and size deviation
-        mask = torch.ones_like(keep_indices, dtype=torch.bool)
-        mask[remove_indices] = False
-        valid_idxs = torch.where(mask)[0]  # Get indices where mask is True
+        valid_idxs = list(set(keep_indices) - set(remove_indices))
 
         return all_boxes[valid_idxs]
 
