@@ -36,7 +36,7 @@ def predict(
     class_id,
     box_threshold=0.1,
     text_threshold=0.1,
-    progress=gr.Progress(track_tqdm=True),
+    progress=gr.Progress(),
 ):
     progress(0, desc="Predicting...")
     total = len(dataset.images)
@@ -100,7 +100,7 @@ detector = gr.Interface(
     ],
     outputs=[
         gr.Textbox(label="Progress"),
-        gr.Label(value={"precision": 0, "recall": 0}),
+        gr.Label(value={"precision (allucinations)": 0, "recall (unrecognized)": 0}),
         gr.AnnotatedImage(),
     ],
     api_name="predict",

@@ -302,9 +302,30 @@ class Dino:
                     break
 
         # Update keep_indices, removing those with high containment and size deviation
-        valid_idxs = list(set(keep_indices) - set(remove_indices))
 
-        return all_boxes[valid_idxs]
+        # valid_idxs = set(keep_indices).difference(set(remove_indices))
+        #
+        # valid_boxes = []
+        # for idx in valid_idxs:
+        #     valid_boxes.append(all_boxes[idx])
+        #
+        # return valid_boxes
+
+        # Assuming keep_indices and remove_indices are PyTorch tensors of type torch.long
+
+        # Create a mask for 'remove_indices'
+        remove_mask = torch.zeros(
+            all_boxes.size(0), dtype=torch.bool, device=all_boxes.device
+        )
+        remove_mask.scatter_(0, remove_indices, True)
+
+        # Invert the mask to get the elements to keep
+        keep_mask = ~remove_mask
+
+        # Filter 'all_boxes' using the mask
+        valid_boxes = all_boxes[keep_mask]
+
+        return valid_boxes
 
 
 class DinoModel(Model):
