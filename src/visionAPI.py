@@ -31,9 +31,10 @@ except Exception as e:
 def predict(alias, box_threshold, text_threshold, progress=gr.Progress()):
     progress(0, desc="Predicting...")
 
+    total = len(dataset.images)
     results = []
     metrics = []
-    for image in tqdm(dataset.images):
+    for i, image in enumerate(tqdm(dataset.images)):
         # Predict
         img_bgr = image.data
         result = model.predict(img_bgr, alias, box_threshold, text_threshold)
@@ -42,7 +43,8 @@ def predict(alias, box_threshold, text_threshold, progress=gr.Progress()):
 
         # results.append(result.tolist())
         metrics.append(metric)
-        yield metrics
+        progress = f"{i}/{total}"
+        yield progress, metrics
 
 
 result_samples: list[list[Any]] = [
@@ -57,7 +59,15 @@ detector = gr.Interface(
         gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.5),
     ],
     outputs=[
-        gr.DataFrame(headers=["true_positives", "false_positives", "false_negatives"])
+        gr.Textbox(label="Progress"),
+        gr.DataFrame(
+            headers=[
+                "true_positives",
+                "false_positives",
+                "false_negatives",
+            ],
+            label="Results",
+        ),
     ],
     api_name="predict",
 )
