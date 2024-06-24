@@ -99,7 +99,8 @@ class Dino:
         text_threshold: float = 0.25,
         confidence: float = 0.5,
     ):
-        detections = [torch.tensor([]), torch.tensor([]), []]
+        # initialize empty lists for boxes, scores and class_ids on self.device
+        detections = [torch.tensor([]).to(self.device) for _ in range(3)]
         boxes, scores = self.model.predict(
             image=image,
             prompt=prompt,
@@ -112,7 +113,8 @@ class Dino:
         detections[1] = torch.cat((detections[1], scores), dim=0)
 
         # extend class_ids with the same class for each box
-        detections[2].extend([prompt] * len(detections[0]))
+        detections[2] = torch.tensor([prompt] * len(boxes)).to(self.device)
+        # detections[2].extend([prompt] * len(detections[0]))
 
         filtered_detections = self.nms(detections)
 
