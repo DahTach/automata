@@ -3,20 +3,6 @@ import torchvision.ops as ops
 from typing import List, Tuple
 import matplotlib.pyplot as plt
 
-preds_sample = [
-    (0, torch.tensor([0.1, 0.2, 0.3, 0.4])),
-    (1, torch.tensor([0.2, 0.3, 0.4, 0.5])),
-    (0, torch.tensor([0.3, 0.4, 0.5, 0.6])),
-]
-
-# ground_truths sample (different from preds_sample)
-grs_sample = [
-    (0, [0.1, 0.2, 0.3, 0.4]),
-    (1, [0.2, 0.3, 0.4, 0.5]),
-    (0, [0.3, 0.4, 0.5, 0.6]),
-    (1, [0.4, 0.5, 0.6, 0.7]),
-]
-
 
 class Metrics:
     def __init__(
@@ -68,9 +54,11 @@ class Metrics:
 def confusion_matrix(
     predictions: torch.Tensor,
     ground_truths: List[Tuple[int, List[float]]],
-    class_id: int = 0,
-):
-    class_prs = ops.box_convert(predictions, in_fmt="cxcywh", out_fmt="xyxy")
+    device,
+    class_id,
+    iou_threshold=0.5,
+) -> List[int]:
+    class_prs = predictions
     class_grs = [bbox for idx, bbox in ground_truths if idx == class_id]
 
     true_positives = 0
@@ -82,12 +70,11 @@ def confusion_matrix(
             boxes=torch.tensor(class_grs),
             in_fmt="cxcywh",
             out_fmt="xyxy",
-        ).to(class_prs.device)
-        # pr_bbxs = torch.stack(class_prs, dim=0)
-        pr_bbxs = class_prs
+        ).to(device)
 
+        pr_bbxs = class_prs
         iou_matrix = ops.box_iou(gr_bbxs, pr_bbxs)
-        matched_indices = torch.where(iou_matrix >= 0.5)
+        matched_indices = torch.where(iou_matrix >= iou_threshold)
 
         true_positives = matched_indices[0].unique().numel()
 
@@ -99,15 +86,4 @@ def confusion_matrix(
     elif not class_grs:
         false_positives = 0
 
-    return true_positives, false_positives, false_negatives
-
-
-# def main():
-#     true_positives, false_positives, false_negatives = confusion_matrix(
-#         preds_sample, grs_sample
-#     )
-#     print(true_positives, false_positives, false_negatives)
-#
-#
-# if __name__ == "__main__":
-#     main()
+    return [true_positives, false_positives, false_negatives]

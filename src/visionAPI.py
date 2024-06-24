@@ -6,6 +6,8 @@ from dataset import Dataset
 from tqdm import tqdm
 import time
 from typing import Any
+import numpy as np
+from collections import defaultdict
 
 
 cwd = os.getcwd()
@@ -29,46 +31,77 @@ except Exception as e:
     raise e
 
 
-def predict(alias, box_threshold, text_threshold, progress=gr.Progress()):
+def predict(
+    alias,
+    class_id,
+    box_threshold=0.1,
+    text_threshold=0.1,
+    progress=gr.Progress(track_tqdm=True),
+):
     progress(0, desc="Predicting...")
-
     total = len(dataset.images)
-    results = []
-    metrics = []
+
+    metrics = [0, 0, 0]
+    annotation = None
     for i, image in enumerate(tqdm(dataset.images)):
-        # Predict
         img_bgr = image.data
         result = model.predict(img_bgr, alias, box_threshold, text_threshold)
-        # Calculate the metrics
-        metric = confusion_matrix(predictions=result, ground_truths=image.grounds)
 
-        # results.append(result.tolist())
-        metrics.append(metric)
+        # calculate the confusion matrix for each confidence level
+        metric = confusion_matrix(
+            predictions=result,
+            ground_truths=image.grounds,
+            device=model.device,
+            class_id=class_id,
+        )
+
+        metrics[0] += metric[0]
+        metrics[1] += metric[1]
+        metrics[2] += metric[2]
+
+        precision = metrics[0] / (metrics[0] + metrics[1]) or 0
+        recall = metrics[0] / (metrics[0] + metrics[2]) or 0
+
+        # every 10 images, update the draw image
+        if i % 10 == 0:
+            annotation = annotations(result, img_bgr, dataset.classnames[class_id])
+
         progress = f"{i}/{total}"
-        yield progress, metrics
+        yield (progress, {"precision": precision, "recall": recall}, annotation)
 
 
-result_samples: list[list[Any]] = [
-    [(1, 2, 3), (4, 5, 6)],
-]
+def annotations(boxes, image, classname):
+    """
+    Expects a a tuple of a base image and list of annotations: a tuple[Image, list[Annotation]].
+    The Image itself can be str filepath, numpy.ndarray, or PIL.Image. Each Annotation is a tuple[Mask, str].
+    The Mask can be either a tuple of 4 int's representing the bounding box coordinates (x1, y1, x2, y2), or 0-1 confidence mask in the form of a numpy.ndarray of the same shape as the image, while the second element of the Annotation tuple is a str label.
+    """
+    h, w, _ = image.shape
+
+    annotations = []
+    for box in boxes:
+        box = int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)
+        annotations.append((box, classname))
+
+    return image, annotations
+
 
 detector = gr.Interface(
     predict,
     inputs=[
         gr.Textbox(),
-        gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.5),
-        gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.5),
+        gr.Dropdown(
+            label="Class ID",
+            choices=dataset.classnames,
+            type="index",
+        ),
+        gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.1),
+        gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.1),
     ],
     outputs=[
         gr.Textbox(label="Progress"),
-        gr.DataFrame(
-            headers=[
-                "true_positives",
-                "false_positives",
-                "false_negatives",
-            ],
-            label="Results",
-        ),
+        gr.Label(value={"precision": 0, "recall": 0}),
+        gr.AnnotatedImage(),
     ],
     api_name="predict",
 )

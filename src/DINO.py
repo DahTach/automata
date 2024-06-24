@@ -12,6 +12,7 @@ from groundingdino.util.misc import clean_state_dict
 from groundingdino.util.slconfig import SLConfig
 from groundingdino.util.utils import get_phrases_from_posmap
 from PIL import Image
+from transformers.models.auto.configuration_auto import re
 import utils
 from tqdm import tqdm
 
@@ -121,9 +122,9 @@ class Dino:
         # detections[2] = torch.tensor([prompt] * len(boxes)).to(self.device)
         detections[2].extend([prompt] * len(detections[0]))
 
-        filtered_detections = self.nms(detections)
+        filtered_detections = self.nms_tensor(detections)
 
-        return boxes
+        return filtered_detections
 
     def predict_batch(
         self,
@@ -230,10 +231,80 @@ class Dino:
         filtered_detections = [[], [], []]
         for index in keep_indices:
             filtered_detections[0].append(all_boxes[index].tolist())
-            filtered_detections[1].append(all_scores[index].item())
+            filtered_detections[1].append(all_scores[index].tolist())
             filtered_detections[2].append(all_prompts[index])
 
         return filtered_detections
+
+    def nms_tensor(
+        self,
+        detections,
+        iou_threshold=0.5,
+        containment_threshold=0.8,
+        size_deviation_threshold=1.5,
+    ):
+        all_boxes = torchvision.ops.box_convert(
+            detections[0], in_fmt="cxcywh", out_fmt="xyxy"
+        )
+        # all_boxes = detections[0]
+
+        all_scores = detections[1]
+        all_prompts = detections[2]
+
+        # Perform NMS
+        keep_indices = (
+            torchvision.ops.nms(all_boxes, all_scores, iou_threshold)
+            .long()
+            .to(self.device)
+        )
+        remove_indices = torch.tensor([], dtype=torch.long).to(self.device)
+
+        # Remove boxes that are bigger than average by size deviation threshold
+        areas = torchvision.ops.box_area(all_boxes)
+        avg_area = torch.mean(areas)
+        for i, area in enumerate(areas):
+            if area > avg_area * size_deviation_threshold:
+                # Remove this index from keep_indices
+                # remove_indices.append(i)
+                remove_indices = torch.cat(
+                    (remove_indices, torch.tensor([i]).to(self.device)), 0
+                )
+
+        # Remove boxes with high containment in others
+        for i in keep_indices:
+            box_i = all_boxes[i]
+            for j in keep_indices:
+                if i == j:  # Skip self-comparison
+                    continue
+                box_j = all_boxes[j]
+
+                # Calculate intersection area
+                inter_width = torch.max(
+                    torch.tensor(0),
+                    torch.min(box_i[2], box_j[2]) - torch.max(box_i[0], box_j[0]),
+                )
+                inter_height = torch.max(
+                    torch.tensor(0),
+                    torch.min(box_i[3], box_j[3]) - torch.max(box_i[1], box_j[1]),
+                )
+                inter_area = inter_width * inter_height
+                box_i_area = (box_i[2] - box_i[0]) * (box_i[3] - box_i[1])
+
+                # Check for high containment
+                containment_ratio = inter_area / box_i_area
+                if containment_ratio > containment_threshold:
+                    # remove_indices.append(i)
+                    remove_indices = torch.cat(
+                        (remove_indices, torch.tensor([i]).to(self.device)), 0
+                    )
+                    break
+
+        # Update keep_indices, removing those with high containment and size deviation
+        mask = torch.ones_like(keep_indices, dtype=torch.bool)
+        mask[remove_indices] = False
+        valid_idxs = torch.where(mask)[0]  # Get indices where mask is True
+
+        return all_boxes[valid_idxs]
 
 
 class DinoModel(Model):
