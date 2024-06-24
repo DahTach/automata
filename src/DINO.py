@@ -193,19 +193,19 @@ class Dino:
         )
 
         filtered_predictions = {}
-        for key, value in keys_idxs.items():
-            start = value["start"]
-            end = value["end"]
-            key_keep_indices = keep_indices[
-                keep_indices >= start and keep_indices <= end
-            ]
-            filtered_predictions[key] = [
-                all_boxes[key_keep_indices],
-                all_scores[key_keep_indices],
-                [key] * len(key_keep_indices),
-            ]
+            for key, value in keys_idxs.items():
+                start = value["start"]
+                end = value["end"]
+                
+                # torch.logical_and to combine conditions
+                key_keep_indices = keep_indices[(keep_indices >= start) & (keep_indices <= end)]
+                filtered_predictions[key] = [
+                    all_boxes[key_keep_indices],
+                    all_scores[key_keep_indices],
+                    [key] * len(key_keep_indices),
+                ]
 
-        return filtered_predictions
+            return filtered_predictions
 
     def nms(
         self,

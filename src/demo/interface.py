@@ -62,7 +62,7 @@ with gr.Blocks() as demo:
 
 
 def run():
-    demo.launch()
+    demo.launch(share=True)
 
 
 if __name__ == "__main__":
