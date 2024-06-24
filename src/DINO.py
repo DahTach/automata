@@ -134,7 +134,7 @@ class Dino:
         self,
         image: np.ndarray,
         prompts: dict,
-        box_threshold: float = 0.25,
+        box_threshold: float = 0.2,
         text_threshold: float = 0.25,
     ):
         """
@@ -170,7 +170,42 @@ class Dino:
 
             predictions[key] = filtered_detections
 
-        return predictions
+        filterer_predictions = self.filter_classes(predictions)
+
+        return filterer_predictions
+
+    def filter_classes(self, predictions, iou_threshold=0.4):
+        all_boxes = []
+        all_scores = []
+        keys_idxs = {}
+        for key, value in predictions.items():
+            keys_idxs.setdefault(key, {"start": 0, "end": 0})
+            boxes = value[0]
+            keys_idxs[key]["start"] = len(all_boxes)
+            scores = value[1]
+            all_boxes.extend(boxes)
+            keys_idxs[key]["end"] = len(all_boxes)
+            all_scores.extend(scores)
+
+        # class dependant nms, keep the highest confidence score if different classes overlap
+        keep_indices = torchvision.ops.nms(
+            torch.tensor(all_boxes), torch.tensor(all_scores), iou_threshold
+        )
+
+        filtered_predictions = {}
+        for key, value in keys_idxs.items():
+            start = value["start"]
+            end = value["end"]
+            key_keep_indices = keep_indices[
+                keep_indices >= start and keep_indices <= end
+            ]
+            filtered_predictions[key] = [
+                all_boxes[key_keep_indices],
+                all_scores[key_keep_indices],
+                [key] * len(key_keep_indices),
+            ]
+
+        return filtered_predictions
 
     def nms(
         self,

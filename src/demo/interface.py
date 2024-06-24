@@ -12,12 +12,12 @@ classes = [
 ]
 
 prompts = {
-    "bitter pack": ["glass bottle", "bitter", "pack"],
-    "bottle pack": ["glass bottle", "pack"],
-    "box": ["box"],
-    "can pack": ["can", "pack"],
-    "crate": ["crate"],
-    "keg": ["keg"],
+    "bitter pack": ["glass bottles", "bitters", "bitter pack"],
+    "bottle pack": ["plastic bottles", "plastic pacl", "bottle pack"],
+    "box": ["box", "cardboard box", "cardboard", "package", "parcel"],
+    "can pack": ["cans", "can pack", "tin cans", "aluminum cans", "beverage cans"],
+    "crate": ["plastic crate", "water crate"],
+    "keg": ["keg", "beer keg", "alcohol keg", "metal keg"],
 }
 
 try:

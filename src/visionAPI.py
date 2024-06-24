@@ -9,6 +9,8 @@ from typing import Any
 import numpy as np
 from collections import defaultdict
 
+# TODO: try DINO 1.5 PRO https://deepdataspace.com/playground/grounding_dino
+
 
 cwd = os.getcwd()
 
