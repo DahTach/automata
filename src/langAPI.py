@@ -10,7 +10,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 chat = ChatGroq(temperature=0, model="gemma-7b-it")
 
-system = "Sei un assistente in uno studio legale e quando ti vengono sottoposti delle domande da parte dei clienti prepari le informazioni che serviranno ad un avvocato"
+system = ""
 
 
 async def predict(question, history):

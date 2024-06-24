@@ -66,8 +66,11 @@ def predict(
         if i % 10 == 0:
             annotation = annotations(result, img_bgr, dataset.classnames[class_id])
 
-        progress = f"{i}/{total}"
-        yield (progress, {"precision": precision, "recall": recall}, annotation)
+        yield (
+            {f"progress {i}/{total}": i / total},
+            {"precision": precision, "recall": recall},
+            annotation,
+        )
 
 
 def annotations(boxes, image, classname):
@@ -99,8 +102,11 @@ detector = gr.Interface(
         gr.Slider(minimum=0.1, maximum=1.0, step=0.01, value=0.1),
     ],
     outputs=[
-        gr.Textbox(label="Progress"),
-        gr.Label(value={"precision (allucinations)": 0, "recall (unrecognized)": 0}),
+        gr.Label(label=None),
+        gr.Label(
+            label=None,
+            value={"precision (allucinations)": 0, "recall (unrecognized)": 0},
+        ),
         gr.AnnotatedImage(),
     ],
     api_name="predict",
