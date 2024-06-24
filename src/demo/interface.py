@@ -12,12 +12,12 @@ classes = [
 ]
 
 prompts = {
-    "bitter pack": ["glass bottles", "bitters", "bitter pack"],
-    "bottle pack": ["plastic bottles", "plastic pacl", "bottle pack"],
-    "box": ["box", "cardboard box", "cardboard", "package", "parcel"],
-    "can pack": ["cans", "can pack", "tin cans", "aluminum cans", "beverage cans"],
+    # "bitter pack": ["crown cork bottles"],
+    "bottle pack": ["bottle pack", "water bottles", "water pack"],
+    "box": ["cardboard box", "cardboard", "parcel"],
+    "can pack": ["cans", "can pack", "tin pack", "tins", "tin cans", "aluminum cans", "beer cans"],
     "crate": ["plastic crate", "water crate"],
-    "keg": ["keg", "beer keg", "alcohol keg", "metal keg"],
+    "keg": ["keg", "beer keg", "alcohol keg", "metal keg", "canyster", "gas canyster"],
 }
 
 try:
@@ -28,26 +28,20 @@ except Exception as e:
 
 def predict(image, progress=gr.Progress(track_tqdm=True)):
     progress(0, desc="Predicting...")
-    outputs = model.predict_batch(image, prompts)
+    outputs = model.predict_slow(image, prompts)
     results = postprocess(outputs, image)
     return image, results
 
 
 def postprocess(output, image):
-    """Postprocess for gr.AnnotatedImage
+    """
     Args:
-    output: the output from the model (list[list[box], list[score], list[prompt]])
-    Returns:
-    results: a tuple of a base image and list of annotations (tuple[Image, list[Annotation]])
-        where:
-        Image: the base image (str filepath, numpy.ndarray, or PIL.Image)
-        list[Annotation]: a list of annotations Annotation = tuple[box, label]
+        output: dict[str, Tuple[list[list[float]], list[float], list[str]]] = class predictions = (boxes, scores, labels)
     """
     h, w, _ = image.shape
     annotations = []
     for key, value in output.items():
         for box, score, _ in zip(*value):
-            # normalize the box and convert to int
             box = [int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)]
             annotations.append((box, f"{key} ({score})"))
 
