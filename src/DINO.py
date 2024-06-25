@@ -169,7 +169,6 @@ class Dino:
 
             predictions[key] = filtered_detections
 
-
         # return predictions
         filtered_predictions = self.filter_classes(predictions)
 
@@ -194,7 +193,6 @@ class Dino:
                 [],
             ]
             for prompt in value:
-
                 boxes, scores = self.model.predict(
                     image=image,
                     prompt=prompt,
@@ -213,13 +211,52 @@ class Dino:
 
             predictions[key] = filtered_detections
 
-        filtered_predictions = self.filter_classes(predictions)
+        filtered_predictions = self.remove_overlapping(predictions)
         # FIX: fix filtered classes so that no boxes with same class are overlapping
         # TODO: lower box threshold but implement more aggressive nms to avoid cuttered boxes
 
         return filtered_predictions
 
         # return predictions
+
+    def remove_overlapping(
+        self,
+        predictions,
+        iou_threshold=0.3,
+        containment_threshold=0.5,
+        size_deviation_threshold=1.1,
+    ):
+        all_boxes = []
+        all_scores = []
+        all_prompts = []
+
+        for key, value in predictions.items():
+            all_boxes.extend(value[0])
+            all_scores.extend(value[1])
+            all_prompts.extend(value[2])
+
+        all_boxes = torch.tensor(all_boxes).to(self.device)
+        all_scores = torch.tensor(all_scores).to(self.device)
+
+        # Perform NMS
+        keep_indices = (
+            torchvision.ops.nms(all_boxes, all_scores, iou_threshold)
+            .long()
+            .to(self.device)
+        ).tolist()
+
+        valid_boxes = []
+        valid_scores = []
+        valid_prompts = []
+        filtered_predictions = {}
+        for idx in keep_indices:
+            for i, (key, value) in enumerate(predictions.items()):
+                if idx == i:
+                    filtered_predictions[key][0] = all_boxes[idx]
+                    filtered_predictions[key][1] = all_scores[idx]
+                    filtered_predictions[key][2] = all_prompts[idx]
+
+        return filtered_predictions
 
     def filter_classes(self, predictions, iou_threshold=0.3):
         # FIX: this performs as shit
@@ -248,7 +285,9 @@ class Dino:
             start = value["start"]
             end = value["end"]
             # Use torch.logical_and to combine conditions
-            key_keep_indices = torch.where((keep_indices >= start) & (keep_indices <= end))[0]
+            key_keep_indices = torch.where(
+                (keep_indices >= start) & (keep_indices <= end)
+            )[0]
 
             key_boxes = []
             key_scores = []
@@ -261,7 +300,6 @@ class Dino:
             filtered_predictions[key] = key_boxes, key_scores, key_labels
 
         return filtered_predictions
-
 
     def diomerda(
         self,
@@ -331,9 +369,6 @@ class Dino:
             valid_prompts.append(all_prompts[idx])
 
         return valid_boxes, valid_scores, valid_prompts
-
-
-
 
     def nms(
         self,
