@@ -215,14 +215,19 @@ class Dino:
         # FIX: fix filtered classes so that no boxes with same class are overlapping
         # TODO: lower box threshold but implement more aggressive nms to avoid cuttered boxes
 
-        porcanna = {}
-        sticazzi = self.remove_all_overlaps(filtered_predictions)
+        # porcanna = {}
+        # sticazzi = self.remove_all_overlaps(filtered_predictions)
         porcanna = {
-            "detection": sticazzi,
+            "detection": filtered_predictions,
         }
 
+        # porcanna = {
+        #     "detection": filtered_predictions,
+        # }
+        #
         return porcanna
 
+        # return filtered_predictions
         # return predictions
 
     def remove_all_overlaps(self, predictions, iou_threshold=0.3):
@@ -272,25 +277,25 @@ class Dino:
             all_scores.extend(value[1])
             all_prompts.extend(value[2])
 
-        all_boxes = torch.tensor(all_boxes).to(self.device)
-        all_scores = torch.tensor(all_scores).to(self.device)
+        all_boxes = torch.stack(all_boxes).to(self.device)
+        all_scores = torch.stack(all_scores).to(self.device)
 
         # Perform NMS
         keep_indices = (
             torchvision.ops.nms(all_boxes, all_scores, iou_threshold)
             .long()
             .to(self.device)
-        ).tolist()
+        )
 
-        filtered_predictions = {}
+        valid_boxes = []
+        valid_scores = []
+        valid_prompts = []
         for idx in keep_indices:
-            for i, (key, value) in enumerate(predictions.items()):
-                if idx == i:
-                    filtered_predictions[key][0] = all_boxes[idx]
-                    filtered_predictions[key][1] = all_scores[idx]
-                    filtered_predictions[key][2] = all_prompts[idx]
+            valid_boxes.append(all_boxes[idx])
+            valid_scores.append(all_scores[idx])
+            valid_prompts.append(all_prompts[idx])
 
-        return filtered_predictions
+        return valid_boxes, valid_scores, valid_prompts
 
     def filter_classes(self, predictions, iou_threshold=0.3):
         # FIX: this performs as shit

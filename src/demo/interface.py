@@ -15,13 +15,21 @@ prompts = {
     # "bitter pack": ["crown cork bottles"],
     "bottle pack": ["bottle pack", "water bottles", "water pack"],
     "box": ["cardboard box", "cardboard", "parcel"],
-    "can pack": ["cans", "can pack", "tin pack", "tins", "tin cans", "aluminum cans", "beer cans"],
+    "can pack": [
+        "cans",
+        "can pack",
+        "tin pack",
+        "tins",
+        "tin cans",
+        "aluminum cans",
+        "beer cans",
+    ],
     "crate": ["plastic crate", "water crate"],
     "keg": ["keg", "beer keg", "alcohol keg", "metal keg", "canyster", "gas canyster"],
 }
 
 try:
-    model = Dino()
+    model = Dino(size="small")
 except Exception as e:
     raise e
 
