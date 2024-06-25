@@ -215,9 +215,46 @@ class Dino:
         # FIX: fix filtered classes so that no boxes with same class are overlapping
         # TODO: lower box threshold but implement more aggressive nms to avoid cuttered boxes
 
-        return filtered_predictions
+        porcanna = {}
+        sticazzi = self.remove_all_overlaps(filtered_predictions)
+        porcanna = {
+            "detection": sticazzi,
+        }
+
+        return porcanna
 
         # return predictions
+
+    def remove_all_overlaps(self, predictions, iou_threshold=0.3):
+        all_boxes = []
+        all_scores = []
+        all_prompts = []
+
+        for key, value in predictions.items():
+            all_boxes.extend(value[0])
+            all_scores.extend(value[1])
+            all_prompts.extend(value[2])
+
+        all_boxes = torch.tensor(all_boxes).to(self.device)
+        all_scores = torch.tensor(all_scores).to(self.device)
+
+        # Perform NMS
+        keep_indices = (
+            torchvision.ops.nms(all_boxes, all_scores, iou_threshold)
+            .long()
+            .to(self.device)
+            .tolist()
+        )
+
+        valid_boxes = []
+        valid_scores = []
+        valid_prompts = []
+        for i in keep_indices:
+            valid_boxes.append(all_boxes[i])
+            valid_scores.append(all_scores[i])
+            valid_prompts.append(all_prompts[i])
+
+        return valid_boxes, valid_scores, valid_prompts
 
     def remove_overlapping(
         self,
@@ -245,9 +282,6 @@ class Dino:
             .to(self.device)
         ).tolist()
 
-        valid_boxes = []
-        valid_scores = []
-        valid_prompts = []
         filtered_predictions = {}
         for idx in keep_indices:
             for i, (key, value) in enumerate(predictions.items()):
