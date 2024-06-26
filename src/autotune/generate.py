@@ -5,6 +5,9 @@ from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 import json
 from collections import defaultdict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 API_KEY = os.getenv("GROQ_API_KEY")
 if not API_KEY:
@@ -28,7 +31,11 @@ class AliasGenerator:
     def __init__(self, path: str = HISTORY_PATH):
         self.path = os.getenv("HISTORY_PATH") or path
         self.history = defaultdict(tuple[float, float])
-        self.chat = ChatGroq(temperature=0, model="gemma-7b-it")
+        self.chat = ChatGroq(
+            temperature=0,
+            model="gemma-7b-it",
+            model_kwargs={"response_format": {"type": "json_object"}},
+        )
         self.load()
 
     def load(self):
@@ -80,7 +87,11 @@ class AliasGenerator:
         """
 
         class_description = class_descriptions[classes[class_id]]
-        system = f"We're trying to find the best aliases (to detect {class_description}) for a grounded object detector. Provide one alias at a time, then I will provide the precision and recall of the provided alias. With that in mind provide an alias to increase the performance."
+        system = f"""Find the best aliases (to detect {class_description}) for a grounded object detector. 
+        Provide one alias at a time (where alias is a word or sentece), then I will provide the precision and recall of the provided alias. 
+        Always respond  with a JSON object with two string keys: "alias" and "reasoning".
+        With that in mind provide an alias to increase the performance."""
+
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system),
@@ -89,5 +100,6 @@ class AliasGenerator:
         )
         chain = prompt | self.chat
         answer = chain.invoke({"performance": performance, "history": history})
-        new_alias = str(answer.content)
-        return new_alias
+        # json string to json objkect
+        new_alias = json.loads(str(answer.content))
+        return new_alias.get("alias", "camadonna")
