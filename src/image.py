@@ -26,6 +26,10 @@ class Image:
     def grounds(self) -> List[Tuple[int, List[float]]]:
         path = self.path.with_suffix(".txt")
 
+        # if path doesn't exist throw error
+        if not path.exists():
+            raise FileNotFoundError(f"Ground truth file for {self.path} not found")
+
         with open(path, "r") as f:
             lines = f.readlines()
             grounds = []
