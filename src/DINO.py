@@ -130,6 +130,26 @@ class Dino:
 
         return filtered_detections
 
+    def predict_class(
+        self,
+        image: np.ndarray,
+        prompt: str,
+        box_threshold: float = 0.25,
+        text_threshold: float = 0.25,
+    ):
+        boxes, scores = self.model.predict(
+            image=image,
+            prompt=prompt,
+            box_threshold=box_threshold,
+            text_threshold=text_threshold,
+        )
+
+        filtered_detections = det.nmsT(detections=(boxes, scores))
+
+        cleaned_detections = det.oversuppresssion(filtered_detections)
+
+        return cleaned_detections
+
     def predict_batch(
         self,
         image: np.ndarray,

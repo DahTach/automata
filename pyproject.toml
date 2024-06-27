@@ -31,3 +31,4 @@ distribution = true
 
 [project.scripts]
 visionapi = "automata.visionAPI:run"
+tune = "automata.autotune.tuner:run"

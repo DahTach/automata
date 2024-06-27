@@ -58,14 +58,12 @@ class Tuner:
         class_id,
         box_threshold=0.1,
         text_threshold=0.1,
-        progress=gr.Progress(),
     ):
-        progress(0, desc="Predicting...")
         total = len(self.dataset.images)
         metrics = [0, 0, 0]
 
         annotatedimage = None
-        for i, img in enumerate(tqdm(self.dataset.images)):
+        for i, img in enumerate(self.dataset.images):
             img_bgr = img.data
             result = self.model.predict(img_bgr, alias, box_threshold, text_threshold)
 
@@ -249,7 +247,7 @@ class Tuner:
                 preview = gr.AnnotatedImage(show_label=False)
             with gr.Row():
                 # Load history output
-                # FIX: disapperars
+                # FIX: disappears
                 history = gr.HighlightedText(
                     show_label=False,
                     color_map=self.color_map,
