@@ -14,6 +14,8 @@ from PIL import Image
 import utils
 import operations.nms as detops
 import gradio as gr
+from agents.paligemma import PaliGemma
+import re
 
 
 class Dino:
@@ -100,8 +102,8 @@ class Dino:
         self,
         image: np.ndarray,
         prompt: str,
-        box_threshold: float = 0.25,
-        text_threshold: float = 0.25,
+        box_threshold: float = 0.15,
+        text_threshold: float = 0.15,
     ):
         boxes, scores = self.model.predict(
             image=image,
@@ -110,8 +112,13 @@ class Dino:
             text_threshold=text_threshold,
         )
 
+        h, w, _ = image.shape
+
         # Convert boxes to xyxy format
         boxes = torchvision.ops.box_convert(boxes, "cxcywh", "xyxy")
+
+        # Denormalize boxes coordinates
+        boxes = boxes * torch.tensor([w, h, w, h], dtype=torch.float32).to(boxes.device)
 
         filtered_detections = detops.nmsT(detections=(boxes, scores))
 
@@ -202,10 +209,10 @@ class GUI:
             "bottle pack",
             "box",
             "can pack",
-            "crate",
             "keg",
         ]
         self.model = None
+        self.oracle = PaliGemma()
         self.image = None
 
     def load_model(self):
@@ -225,14 +232,17 @@ class GUI:
         Returns:
             annotations: List[Annotation] = [(Mask, str)] where mask: Tuple[int, int, int, int] and str is the class name
         """
+
+        def safe_list_get(lis, idx, default="unknown"):
+            try:
+                return lis[idx]
+            except IndexError:
+                return default
+
         annotations = []
-        h, w, _ = self.image.shape
         for id, (boxes, scores) in predictions.items():
-            class_name = self.classes[id]
+            class_name = safe_list_get(self.classes, id)
             for i, box in enumerate(boxes):
-                box = box * torch.tensor([w, h, w, h], dtype=torch.float32).to(
-                    box.device
-                )
                 annotations.append((box.int().tolist(), f"{class_name} {i}"))
 
         return annotations
@@ -265,16 +275,91 @@ class GUI:
             predictions[i] = self.model.predict_class(self.image, prompt)
 
         # Oversuppression
-        cleaned_predictions = detops.oversuppression(predictions)
+        cleaned_predictions = detops.oversuppression(predictions, self.image.shape[:2])
 
-        nms_image = [self.image, self.annotate_preds(predictions)]
-        over_image = [self.image, self.annotate_preds(cleaned_predictions)]
+        nms_image = self.image, self.annotate_preds(predictions)
+        over_image = self.image, self.annotate_preds(cleaned_predictions)
         nms_labels = self.label_preds(predictions)
         over_labels = self.label_preds(cleaned_predictions)
 
-        # FIX: nms and over are the same
+        prophesies = self.prophesy(self.image, cleaned_predictions)
+        phrophesies_image = self.image, self.annotate_preds(prophesies)
 
-        return nms_image, over_image, nms_labels, over_labels
+        return (
+            nms_image,
+            over_image,
+            phrophesies_image,
+            nms_labels,
+            over_labels,
+        )
+
+    def prophecy_id(self, prophecy: str):
+        prophs = {
+            "crow corks": 0,
+            "plastic caps": 1,
+            "cardboard box": 2,
+            "tin cans": 3,
+            "metal keg or gas canister": 4,
+        }
+
+        # Prophecy: plastic caps -> 1
+        # Prophecy: crown corks -> 5 dc
+        # Prophecy: crown corks -> 5 dc
+        # Prophecy: tin cans -> 3
+        # Prophecy: plastic caps -> 1
+        # Prophecy:  cardboard box -> 5 dc
+        # Prophecy: plastic caps -> 1
+        # Prophecy:  cardboard box -> 5 dc
+        # Prophecy:  cardboard box -> 5 dc
+        # Prophecy: cardboard box -> 2
+        # Prophecy: metal keg or gas canister -> 4
+
+        prophecy = re.sub(r"[^a-zA-Z0-9\s]", "", prophecy).lower().strip()
+
+        for key, val in prophs.items():
+            if prophecy in key:
+                print(f"Prophecy: {prophecy} -> {val}")
+                return val
+        print(f"Prophecy: {prophecy} -> {len(self.classes) } dc")
+        return len(self.classes)
+
+    def prophesy(
+        self,
+        image: np.ndarray,
+        cleaned_predictions: Dict[int, Tuple[torch.Tensor, torch.Tensor]],
+    ):
+        """
+        "crown corks",
+        "plastic caps",
+        "cardboard box",
+        "tin cans",
+        "metal keg or gas canister",
+        """
+
+        prophesies = {i: ([], []) for i in range(len(self.classes) + 1)}
+
+        for key, (boxes, scores) in cleaned_predictions.items():
+            bbxs = boxes.tolist()
+            scores = scores.tolist()
+
+            for box, score in zip(bbxs, scores):
+                img = self.oracle.crop_box(image, [int(i) for i in box])
+                prophecy = self.oracle.generate(img)
+                class_id = self.prophecy_id(prophecy)
+                prophesies[class_id][0].append(box)
+                prophesies[class_id][1].append(score)
+
+        # TODO: refactor in order not to do this shit
+
+        tensor_prophs = {
+            i: (torch.tensor([]), torch.tensor([]))
+            for i in range(len(self.classes) + 1)
+        }
+
+        for key, (boxes, scores) in prophesies.items():
+            tensor_prophs[key] = (torch.tensor(boxes), torch.tensor(scores))
+
+        return tensor_prophs
 
     def interface(self):
         with gr.Blocks() as demo:
@@ -297,13 +382,16 @@ class GUI:
                 with gr.Column():
                     over = gr.AnnotatedImage(label="Oversuppression")
                     over_scores = gr.Label(label="Oversuppression Scores")
+            with gr.Row():
+                prophesies = gr.AnnotatedImage(label="Prophesies")
 
             demo.load(self.load_model)
 
             start.click(
                 self.predict,
                 inputs=prompts,
-                outputs=[nms, over, nms_scores, over_scores],
+                # outputs=[nms, over, nms_scores, over_scores],
+                outputs=[nms, over, prophesies, nms_scores, over_scores],
                 trigger_mode="once",
             )
 
