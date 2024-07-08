@@ -15,6 +15,7 @@ from PIL import Image
 from transformers.models.auto.configuration_auto import re
 import utils
 from tqdm import tqdm
+from operations import nms as ops
 
 
 class Dino:
@@ -134,8 +135,8 @@ class Dino:
         self,
         image: np.ndarray,
         prompt: str,
-        box_threshold: float = 0.25,
-        text_threshold: float = 0.25,
+        box_threshold: float = 0.15,
+        text_threshold: float = 0.15,
     ):
         boxes, scores = self.model.predict(
             image=image,
@@ -144,11 +145,17 @@ class Dino:
             text_threshold=text_threshold,
         )
 
-        filtered_detections = det.nmsT(detections=(boxes, scores))
+        h, w, _ = image.shape
 
-        cleaned_detections = det.oversuppresssion(filtered_detections)
+        # Convert boxes to xyxy format
+        boxes = torchvision.ops.box_convert(boxes, "cxcywh", "xyxy")
 
-        return cleaned_detections
+        # Denormalize boxes coordinates
+        boxes = boxes * torch.tensor([w, h, w, h], dtype=torch.float32).to(boxes.device)
+
+        filtered_detections = ops.nmsT(detections=(boxes, scores))
+
+        return filtered_detections
 
     def predict_batch(
         self,

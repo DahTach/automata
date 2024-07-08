@@ -65,10 +65,12 @@ class Tuner:
         annotatedimage = None
         for i, img in enumerate(self.dataset.images):
             img_bgr = img.data
-            result = self.model.predict(img_bgr, alias, box_threshold, text_threshold)
+            boxes, scores = self.model.predict_class(
+                img_bgr, alias, box_threshold, text_threshold
+            )
 
             metric = confusion_matrix(
-                predictions=result,
+                predictions=boxes,
                 ground_truths=img.grounds,
                 device=self.model.device,
                 class_id=class_id,
@@ -81,7 +83,7 @@ class Tuner:
             # every 10 iterations, update the gradio annotatedImage
             if i % 10 == 0:
                 annotatedimage = self.display_preview(
-                    result, img_bgr, self.dataset.classnames[class_id]
+                    boxes, img_bgr, self.dataset.classnames[class_id]
                 )
 
             precision = (

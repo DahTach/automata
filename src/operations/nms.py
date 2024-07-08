@@ -1,26 +1,13 @@
-import os
-import urllib.request
-from typing import List, Tuple
+import copy
+import itertools
+from typing import Tuple
+
 import cv2 as cv
 import groundingdino.datasets.transforms as T
 import numpy as np
 import torch
 import torchvision
-import torchvision.ops as ops
-from groundingdino.models import build_model
-from groundingdino.util.inference import Model
-from groundingdino.util.misc import clean_state_dict
-from groundingdino.util.slconfig import SLConfig
-from groundingdino.util.utils import get_phrases_from_posmap
 from PIL import Image
-from transformers.models.auto.configuration_auto import re
-import utils
-from tqdm import tqdm
-import copy
-
-
-from collections import defaultdict
-import itertools
 
 
 def preprocess_image(image_bgr: np.ndarray) -> torch.Tensor:
@@ -65,6 +52,86 @@ def nmsT(
     return valid_boxes, valid_scores
 
 
+def roi(
+    detections: tuple[torch.Tensor, torch.Tensor],
+    image: np.ndarray,
+    h_lines: Tuple[int, int] | None = None,
+    v_lines: Tuple[int, int] | None = None,
+    rect: Tuple[int, int, int, int] | None = None,
+) -> Tuple[torch.Tensor, torch.Tensor, np.ndarray]:
+    """Perform Region of Interest (ROI) filtering on the detections
+    Args:
+        detections: tuple of detections (boxes, scores)
+        lines: tuple of lines (point1, point2) defining the ROI
+        rect: tuple of rectangle (x1, y1, x2, y2) defining the ROI
+    Returns:
+        list of detections within the ROI
+    """
+    boxes, scores = detections
+
+    device = boxes.device
+
+    if boxes.device != scores.device:
+        prefered_device = (
+            boxes.device if boxes.device != torch.device("cpu") else scores.device
+        )
+        boxes = boxes.to(prefered_device)
+
+    # Perform ROI filtering
+    keep_indices = torch.ones(len(boxes), dtype=torch.bool)
+    # given 2 lines, get only the boxes which coordinates are within the lines (boxes are in xyxy format)
+    if h_lines is not None:  # horizontal lines (y1, y2)
+        box_condition = (boxes[:, 1] > h_lines[0]) & (boxes[:, 3] < h_lines[1])
+        keep_indices = torch.where(
+            box_condition,
+            torch.tensor([True]).to(device),
+            torch.tensor([False]).to(device),
+        )
+        # draw the lines on the image
+        cv.line(image, (0, h_lines[0]), (image.shape[1], h_lines[0]), (0, 255, 0), 2)
+        cv.line(image, (0, h_lines[1]), (image.shape[1], h_lines[1]), (0, 255, 0), 2)
+    elif v_lines is not None:  # vertical lines (x1, x2)
+        box_condition = (boxes[:, 0] > v_lines[0]) & (boxes[:, 2] < v_lines[1])
+        keep_indices = torch.where(
+            box_condition,
+            torch.tensor([True]).to(device),
+            torch.tensor([False]).to(device),
+        )
+        # draw the lines on the image
+        cv.line(image, (v_lines[0], 0), (v_lines[0], image.shape[0]), (0, 255, 0), 2)
+        cv.line(image, (v_lines[1], 0), (v_lines[1], image.shape[0]), (0, 255, 0), 2)
+    elif rect is not None:
+        box_condition = (
+            (boxes[:, 0] > rect[0])
+            & (boxes[:, 1] > rect[1])
+            & (boxes[:, 2] < rect[2])
+            & (boxes[:, 3] < rect[3])
+        )
+        keep_indices = torch.where(
+            box_condition,
+            torch.tensor([True]).to(device),
+            torch.tensor([False]).to(device),
+        )
+        # draw the rectangle on the image
+        cv.rectangle(image, (rect[0], rect[1]), (rect[2], rect[3]), (0, 255, 0), 2)
+
+    if keep_indices.any():
+        # Find the index of the biggest box within the defined area
+        biggest_box_index = torch.argmax(
+            (boxes[keep_indices][:, 2] - boxes[keep_indices][:, 0])
+            * (boxes[keep_indices][:, 3] - boxes[keep_indices][:, 1])
+        )
+
+        # Update keep_indices to only keep the index of the biggest box within the defined area
+        keep_indices = keep_indices.nonzero()[biggest_box_index]
+
+    # Filter the detections with the updated keep_indices
+    valid_boxes = boxes[keep_indices]
+    valid_scores = scores[keep_indices]
+
+    return valid_boxes, valid_scores, image
+
+
 def oversuppression(
     input_predictions: dict[int, tuple[torch.Tensor, torch.Tensor]],
     shape: Tuple[int, int],
@@ -83,6 +150,8 @@ def oversuppression(
     """
 
     # TODO: check why some object disappear (like the rollbars)
+
+    # FIX: might need to tune the score normalization for detecting classes like the water crate
 
     predictions = copy.deepcopy(input_predictions)
     keys = list(predictions.keys())
@@ -160,6 +229,7 @@ def remove_contained(boxes: torch.Tensor, threshold=0.1):
     Returns:
         list of boxes after removing inside boxes
     """
+    # FIX: Does not remove boxes that are contained in other boxes
     keep = torch.ones(len(boxes), dtype=torch.bool)
     for i, box1 in enumerate(boxes):
         for j, box2 in enumerate(boxes):
@@ -173,3 +243,6 @@ def remove_contained(boxes: torch.Tensor, threshold=0.1):
                     keep[i] = False
                     break
     return keep
+
+
+# TODO: add Pallets ROI

@@ -1,0 +1,638 @@
+0: 768x1024 232 objects, 656.7ms
+Speed: 14.4ms preprocess, 656.7ms inference, 395.6ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 14.449119567871094, 'inference': 656.7320823669434, 'postprocess': 395.5848217010498}]
+
+0: 768x1024 232 objects, 144.5ms
+Speed: 28.8ms preprocess, 144.5ms inference, 64.4ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 28.75804901123047, 'inference': 144.5150375366211, 'postprocess': 64.36705589294434}]
+
+0: 768x1024 232 objects, 25.7ms
+Speed: 4.7ms preprocess, 25.7ms inference, 64.9ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 4.696130752563477, 'inference': 25.727033615112305, 'postprocess': 64.86392021179199}]
+
+0: 768x1024 232 objects, 29.6ms
+Speed: 14.0ms preprocess, 29.6ms inference, 64.9ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 13.991117477416992, 'inference': 29.5717716217041, 'postprocess': 64.87011909484863}]
+
+0: 768x1024 232 objects, 27.1ms
+Speed: 4.5ms preprocess, 27.1ms inference, 64.3ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 4.54401969909668, 'inference': 27.105093002319336, 'postprocess': 64.3010139465332}]
+
+0: 768x1024 232 objects, 26.9ms
+Speed: 4.5ms preprocess, 26.9ms inference, 65.0ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 4.517078399658203, 'inference': 26.87811851501465, 'postprocess': 65.02795219421387}]
+
+0: 768x1024 232 objects, 33.9ms
+Speed: 8.7ms preprocess, 33.9ms inference, 67.2ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 8.72182846069336, 'inference': 33.86187553405762, 'postprocess': 67.19112396240234}]
+
+0: 768x1024 232 objects, 24.9ms
+Speed: 4.5ms preprocess, 24.9ms inference, 66.5ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 4.51207160949707, 'inference': 24.91593360900879, 'postprocess': 66.45989418029785}]
+
+0: 768x1024 232 objects, 27.7ms
+Speed: 12.4ms preprocess, 27.7ms inference, 65.8ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'
+speed: {'preprocess': 12.357950210571289, 'inference': 27.69303321838379, 'postprocess': 65.82975387573242}]
+
+0: 768x1024 232 objects, 26.7ms
+Speed: 4.5ms preprocess, 26.7ms inference, 64.9ms postprocess per image at shape (1, 3, 768, 1024)
+masks =  [ultralytics.engine.results.Results object with attributes:
+
+boxes: ultralytics.engine.results.Boxes object
+keypoints: None
+masks: ultralytics.engine.results.Masks object
+names: {0: 'object'}
+obb: None
+orig_img: array([[[175, 142, 137],
+        [170, 137, 132],
+        [164, 131, 126],
+        ...,
+        [143, 151, 170],
+        [138, 147, 164],
+        [152, 161, 178]],
+
+       [[170, 137, 132],
+        [168, 135, 130],
+        [164, 131, 126],
+        ...,
+        [144, 152, 171],
+        [136, 145, 162],
+        [142, 151, 168]],
+
+       [[162, 129, 124],
+        [163, 130, 125],
+        [163, 130, 125],
+        ...,
+        [154, 162, 181],
+        [150, 159, 176],
+        [150, 159, 176]],
+
+       ...,
+
+       [[141, 110, 107],
+        [141, 110, 107],
+        [147, 116, 113],
+        ...,
+        [158, 130, 129],
+        [158, 130, 129],
+        [158, 130, 129]],
+
+       [[139, 108, 105],
+        [139, 108, 105],
+        [144, 113, 110],
+        ...,
+        [157, 129, 128],
+        [157, 129, 128],
+        [157, 129, 128]],
+
+       [[144, 113, 110],
+        [143, 112, 109],
+        [146, 115, 112],
+        ...,
+        [157, 129, 128],
+        [156, 128, 127],
+        [156, 128, 127]]], dtype=uint8)
+orig_shape: (1944, 2592)
+path: 'image0.jpg'
+probs: None
+save_dir: 'runs/segment/predict'

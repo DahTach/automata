@@ -6,6 +6,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 import json
 from collections import defaultdict
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -13,6 +14,14 @@ API_KEY = os.getenv("GROQ_API_KEY")
 if not API_KEY:
     raise ValueError("GROQ_API_KEY is not set")
 os.environ["GROQ_API_KEY"] = API_KEY
+
+
+requests_per_minute = {
+    "gemma-7b-it": 30,
+    "llama3-70b-8192": 30,
+    "llama3-8b-8192": 30,
+    "mixtral-8x7b-32768": 30,
+}
 
 HISTORY_PATH = "/Users/francescotacinelli/Developer/automata/data/alias_history.json"
 
@@ -36,6 +45,7 @@ class AliasGenerator:
             model="gemma-7b-it",
             model_kwargs={"response_format": {"type": "json_object"}},
         )
+        self.rpm = 0, 0
         self.load()
 
     def load(self):
@@ -50,6 +60,22 @@ class AliasGenerator:
         if final_metrics[1] < 0.5:
             return True
         return False
+
+    def check_rpm(self, start_time):
+        if self.rpm[0] >= 30:
+            time.sleep(60 - (time.time() - start_time))
+            self.rpm = 0, self.rpm[1]
+        return True
+
+    def update_rpm(self):
+        while True:
+            minutes = time.localtime().tm_min
+            if self.check_rpm(minutes):
+                self.rpm = 0, minutes
+            time.sleep(60)
+
+    def update_requests(self):
+        self.rpm = self.rpm[0] + 1, self.rpm[1]
 
     @property
     def best(self) -> tuple:

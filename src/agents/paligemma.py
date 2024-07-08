@@ -22,7 +22,9 @@ class PaliGemma:
             "tin cans",
             "metal keg or gas canister",
             "crown corks",
+            "water crate",
         ]
+
         self.prompt = f"which of these categories: {self.options} better describes the object in the image?"
 
     def generate(self, image: np.ndarray):

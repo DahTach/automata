@@ -204,13 +204,7 @@ class DinoModel(Model):
 
 class GUI:
     def __init__(self):
-        self.classes = [
-            "bitter pack",
-            "bottle pack",
-            "box",
-            "can pack",
-            "keg",
-        ]
+        self.classes = ["bitter pack", "bottle pack", "box", "can pack", "keg", "crate"]
         self.model = None
         self.oracle = PaliGemma()
         self.image = None
@@ -295,24 +289,13 @@ class GUI:
 
     def prophecy_id(self, prophecy: str):
         prophs = {
-            "crow corks": 0,
+            "crown corks": 0,
             "plastic caps": 1,
             "cardboard box": 2,
             "tin cans": 3,
             "metal keg or gas canister": 4,
+            "water crate": 5,
         }
-
-        # Prophecy: plastic caps -> 1
-        # Prophecy: crown corks -> 5 dc
-        # Prophecy: crown corks -> 5 dc
-        # Prophecy: tin cans -> 3
-        # Prophecy: plastic caps -> 1
-        # Prophecy:  cardboard box -> 5 dc
-        # Prophecy: plastic caps -> 1
-        # Prophecy:  cardboard box -> 5 dc
-        # Prophecy:  cardboard box -> 5 dc
-        # Prophecy: cardboard box -> 2
-        # Prophecy: metal keg or gas canister -> 4
 
         prophecy = re.sub(r"[^a-zA-Z0-9\s]", "", prophecy).lower().strip()
 

@@ -1,0 +1,36 @@
+{
+    "path": "/Users/francescotacinelli/Developer/automata/data/dataset.json",
+    "classes": {
+        "bitters": 0,
+        "bottles": 1,
+        "corrugated": 2,
+        "cans": 3,
+        "keg": 4,
+        "crate": 5
+    },
+    "captions": {
+        "0": [
+            "crown cork bottles"
+        ],
+        "1": [
+            "plastic cap bottles"
+        ],
+        "2": [
+            "cardboard box"
+        ],
+        "3": [
+            "cans pack"
+        ],
+        "4": [
+            "metal keg or gas canister"
+        ]
+    },
+    "categories": {
+        "crown corks": 0,
+        "plastic caps": 1,
+        "cardboard box": 2,
+        "tin cans": 3,
+        "metal keg or gas canister": 4
+    },
+    "prompt": "which of these categories: dict_keys(['crown corks', 'plastic caps', 'cardboard box', 'tin cans', 'metal keg or gas canister']) better describes the object in the image?"
+}
