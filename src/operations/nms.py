@@ -25,6 +25,7 @@ def preprocess_image(image_bgr: np.ndarray) -> torch.Tensor:
 
 def nmsT(
     detections: tuple[torch.Tensor, torch.Tensor],
+    shape: Tuple[int, int],
     iou_threshold: float = 0.5,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Perform Non-Maximum Suppression on the detections
@@ -47,6 +48,15 @@ def nmsT(
 
     # Filter the detections with the keep_indices
     valid_boxes = boxes[keep_indices]
+
+    # Perform outlier removal on the filtered boxes
+    keep_indices = remove_outliers(valid_boxes, shape)
+    valid_boxes = valid_boxes[keep_indices]
+
+    # Perform containment removal on the filtered boxes
+    keep_indices = remove_contained(valid_boxes)
+
+    valid_boxes = valid_boxes[keep_indices]
     valid_scores = scores[keep_indices]
 
     return valid_boxes, valid_scores

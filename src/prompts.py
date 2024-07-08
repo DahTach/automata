@@ -4,6 +4,15 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 
+def get_images_path(top: Path):
+    images = []
+    for root, dirs, files in top.walk():
+        for name in files:
+            if name.endswith((".jpg", ".png")):
+                images.append(root / name)
+    return images
+
+
 def get_path():
     config = dotenv_values(
         ".env"
@@ -54,6 +63,7 @@ class Dataset:
             "metal keg or gas canister": 4,
         }
         self.prompt = f"which of these categories: {self.categories.keys()} better describes the object in the image?"
+        self.sample_images = get_images_path(Path("data/images"))
 
     def load(self):
         with open(self.path, "r") as f:

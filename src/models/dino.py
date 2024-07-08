@@ -166,7 +166,9 @@ class Dino:
         boxes = boxes * torch.tensor([w, h, w, h], dtype=torch.float32).to(boxes.device)
 
         # Apply NMS
-        valid_boxes, valid_scores = detops.nmsT(detections=(boxes, scores))
+        valid_boxes, valid_scores = detops.nmsT(
+            detections=(boxes, scores), shape=(h, w)
+        )
 
         predictions[0] = torch.cat([predictions[0], valid_boxes])
         predictions[1] = torch.cat([predictions[1], valid_scores])

@@ -42,9 +42,16 @@ def to_labels(
     Returns:
         labels: dict[str, float] of classes and confidences
     """
+
+    def safe_list_get(lis, idx, default=classes[0]):
+        try:
+            return lis[idx]
+        except IndexError:
+            return default
+
     labels = {}
     for id, (boxes, scores) in predictions.items():
-        class_name = classes[id]
+        class_name = safe_list_get(classes, id)
         for i, score in enumerate(scores):
             labels[f"{class_name} {i}"] = score
     return labels
