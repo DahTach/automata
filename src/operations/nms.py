@@ -48,16 +48,19 @@ def nmsT(
 
     # Filter the detections with the keep_indices
     valid_boxes = boxes[keep_indices]
+    valid_scores = scores[keep_indices]
 
     # Perform outlier removal on the filtered boxes
     keep_indices = remove_outliers(valid_boxes, shape)
+
     valid_boxes = valid_boxes[keep_indices]
+    valid_scores = valid_scores[keep_indices]
 
     # Perform containment removal on the filtered boxes
     keep_indices = remove_contained(valid_boxes)
 
     valid_boxes = valid_boxes[keep_indices]
-    valid_scores = scores[keep_indices]
+    valid_scores = valid_scores[keep_indices]
 
     return valid_boxes, valid_scores
 
