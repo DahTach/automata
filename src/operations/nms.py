@@ -173,9 +173,11 @@ def oversuppression(
         boxes1, scores1 = predictions[key1]
         boxes2, scores2 = predictions[key2]
 
-        # Normalize the scores
-        scores1 = scores1 / scores1.max()
-        scores2 = scores2 / scores2.max()
+        # Normalize the scores (handle empty tensors)
+        if scores1.numel() > 0:  # Check if scores1 is not empty
+            scores1 = scores1 / scores1.max()
+        if scores2.numel() > 0:  # Check if scores2 is not empty
+            scores2 = scores2 / scores2.max()
 
         # Remove contained boxes before NMS
         keep1 = remove_contained(boxes1)

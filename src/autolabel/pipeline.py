@@ -178,21 +178,32 @@ class Pipeline:
             exit(0)
 
     def write_labels(
-        self, detections: dict[int, tuple[torch.Tensor, torch.Tensor]], img_path: Path
+        self,
+        detections: dict[int, tuple[torch.Tensor, torch.Tensor]],
+        img_path: Path,
+        shape: tuple[int, int],
     ):
-        yololines = []
+        lines = []
         for id, (boxes, scores) in detections.items():
             if boxes.numel() == 0:  # Check if boxes is empty
                 continue
+            # convert to yolo format
             boxes = ops.box_convert(boxes, "xyxy", "cxcywh")
+            # normalize the boxes between 0 and 1
+            boxes = boxes / torch.tensor([shape[1], shape[0], shape[1], shape[0]]).to(
+                boxes.device
+            )
+
             for idx in range(boxes.shape[0]):
                 box = boxes[idx]
-                score = scores[idx]
-                yololines.append(f"{id} {box[0]} {box[1]} {box[2]} {box[3]}")
+                # score = scores[idx]
+                line = f"{id} {box[0]} {box[1]} {box[2]} {box[3]}"
+                print("line", line)
+                lines.append(line)
 
         label_path = img_path.with_suffix(".txt")
         with open(label_path, "w") as file:
-            file.writelines(yololines)
+            file.write("\n".join(lines))
         print(f"Labels written to {label_path}")
 
 
@@ -213,7 +224,8 @@ def run():
     for image in tqdm(images):
         img = cv.imread(str(image))
         predictions = pipeline.pipe(img, pipeline.prompts)
-        pipeline.write_labels(predictions, image)
+        h, w = img.shape[:2]
+        pipeline.write_labels(predictions, image, (h, w))
 
 
 if __name__ == "__main__":
