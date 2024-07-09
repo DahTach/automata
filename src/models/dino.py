@@ -14,6 +14,8 @@ import utils
 import operations.nms as detops
 from typing import Tuple, List
 
+# TODO: check all devices and make sure they are on the same device
+
 
 def get_device():
     if torch.cuda.is_available():
@@ -126,7 +128,9 @@ class Dino:
                 )
 
                 # Apply NMS
-                valid_boxes, valid_scores = detops.nmsT(detections=(boxes, scores))
+                valid_boxes, valid_scores = detops.nmsT(
+                    detections=(boxes, scores), shape=(h, w)
+                )
 
                 predictions[id] = (
                     torch.cat([predictions[id][0], valid_boxes]),

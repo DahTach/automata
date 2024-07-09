@@ -39,7 +39,7 @@ class Dataset:
         self.classes: dict[str, int] = {
             "bitters": 0,
             "bottles": 1,
-            "corrugated": 2,
+            "box": 2,
             "cans": 3,
             "keg": 4,
             "crate": 5,

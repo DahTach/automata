@@ -50,28 +50,28 @@ def nmsT(
     valid_boxes = boxes[keep_indices]
     valid_scores = scores[keep_indices]
 
-    # Perform outlier removal on the filtered boxes
-    keep_indices = remove_outliers(valid_boxes, shape)
-
-    valid_boxes = valid_boxes[keep_indices]
-    valid_scores = valid_scores[keep_indices]
-
-    # Perform containment removal on the filtered boxes
-    keep_indices = remove_contained(valid_boxes)
-
-    valid_boxes = valid_boxes[keep_indices]
-    valid_scores = valid_scores[keep_indices]
+    # # TODO: make another method for batch NMS, this overrides the batched overhead
+    # # Perform outlier removal on the filtered boxes
+    # keep_indices = remove_outliers(valid_boxes, shape)
+    #
+    # valid_boxes = valid_boxes[keep_indices]
+    # valid_scores = valid_scores[keep_indices]
+    #
+    # # Perform containment removal on the filtered boxes
+    # keep_indices = remove_contained(valid_boxes)
+    #
+    # valid_boxes = valid_boxes[keep_indices]
+    # valid_scores = valid_scores[keep_indices]
 
     return valid_boxes, valid_scores
 
 
 def roi(
     detections: tuple[torch.Tensor, torch.Tensor],
-    image: np.ndarray,
     h_lines: Tuple[int, int] | None = None,
     v_lines: Tuple[int, int] | None = None,
     rect: Tuple[int, int, int, int] | None = None,
-) -> Tuple[torch.Tensor, torch.Tensor, np.ndarray]:
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """Perform Region of Interest (ROI) filtering on the detections
     Args:
         detections: tuple of detections (boxes, scores)
@@ -101,8 +101,8 @@ def roi(
             torch.tensor([False]).to(device),
         )
         # draw the lines on the image
-        cv.line(image, (0, h_lines[0]), (image.shape[1], h_lines[0]), (0, 255, 0), 2)
-        cv.line(image, (0, h_lines[1]), (image.shape[1], h_lines[1]), (0, 255, 0), 2)
+        # cv.line(image, (0, h_lines[0]), (image.shape[1], h_lines[0]), (0, 255, 0), 2)
+        # cv.line(image, (0, h_lines[1]), (image.shape[1], h_lines[1]), (0, 255, 0), 2)
     elif v_lines is not None:  # vertical lines (x1, x2)
         box_condition = (boxes[:, 0] > v_lines[0]) & (boxes[:, 2] < v_lines[1])
         keep_indices = torch.where(
@@ -111,8 +111,8 @@ def roi(
             torch.tensor([False]).to(device),
         )
         # draw the lines on the image
-        cv.line(image, (v_lines[0], 0), (v_lines[0], image.shape[0]), (0, 255, 0), 2)
-        cv.line(image, (v_lines[1], 0), (v_lines[1], image.shape[0]), (0, 255, 0), 2)
+        # cv.line(image, (v_lines[0], 0), (v_lines[0], image.shape[0]), (0, 255, 0), 2)
+        # cv.line(image, (v_lines[1], 0), (v_lines[1], image.shape[0]), (0, 255, 0), 2)
     elif rect is not None:
         box_condition = (
             (boxes[:, 0] > rect[0])
@@ -126,7 +126,7 @@ def roi(
             torch.tensor([False]).to(device),
         )
         # draw the rectangle on the image
-        cv.rectangle(image, (rect[0], rect[1]), (rect[2], rect[3]), (0, 255, 0), 2)
+        # cv.rectangle(image, (rect[0], rect[1]), (rect[2], rect[3]), (0, 255, 0), 2)
 
     if keep_indices.any():
         # Find the index of the biggest box within the defined area
@@ -139,10 +139,10 @@ def roi(
         keep_indices = keep_indices.nonzero()[biggest_box_index]
 
     # Filter the detections with the updated keep_indices
-    valid_boxes = boxes[keep_indices]
-    valid_scores = scores[keep_indices]
+    valid_box = boxes[keep_indices]
+    valid_score = scores[keep_indices]
 
-    return valid_boxes, valid_scores, image
+    return valid_box, valid_score
 
 
 def oversuppression(

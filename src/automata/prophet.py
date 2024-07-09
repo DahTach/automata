@@ -52,32 +52,32 @@ class Prophet:
 
         return detections, prophesies, comparison
 
-    def pred_seg(self, image: np.ndarray):
-        predictions = self.dino.predict(image, self.prompts)
-
-        preds_with_masks = {
-            id: (
-                torch.tensor([]).to(self.device),
-                torch.tensor([]).to(self.device),
-                torch.tensor([]).to(self.device),
-            )
-            for id in self.prompts.keys()
-        }
-
-        for class_id, (boxes, scores) in predictions.items():
-            for idx in range(boxes.shape[0]):
-                box = boxes[idx]
-                score = scores[idx]
-                res = self.sam.infer(image)
-
-                print("masks = ", mask)
-                # preds_with_masks[class_id] = (
-                #     torch.cat((predictions[class_id][0], box.view(1, -1))),
-                #     torch.cat((predictions[class_id][0], box.view(1, -1))),
-                #     torch.cat((predictions[class_id][1], score.view(1))),
-                # )
-
-        return preds_with_masks
+    # def pred_seg(self, image: np.ndarray):
+    #     predictions = self.dino.predict(image, self.prompts)
+    #
+    #     preds_with_masks = {
+    #         id: (
+    #             torch.tensor([]).to(self.device),
+    #             torch.tensor([]).to(self.device),
+    #             torch.tensor([]).to(self.device),
+    #         )
+    #         for id in self.prompts.keys()
+    #     }
+    #
+    #     for class_id, (boxes, scores) in predictions.items():
+    #         for idx in range(boxes.shape[0]):
+    #             box = boxes[idx]
+    #             score = scores[idx]
+    #             res = self.sam.infer(image)
+    #
+    #             print("masks = ", mask)
+    #             # preds_with_masks[class_id] = (
+    #             #     torch.cat((predictions[class_id][0], box.view(1, -1))),
+    #             #     torch.cat((predictions[class_id][0], box.view(1, -1))),
+    #             #     torch.cat((predictions[class_id][1], score.view(1))),
+    #             # )
+    #
+    #     return preds_with_masks
 
     def prophecy_id(self, prophecy: str):
         prophecy = re.sub(r"[^a-zA-Z0-9\s]", "", prophecy).lower().strip()
