@@ -3,8 +3,7 @@ import torch
 import os
 import numpy as np
 from prompts import Dataset
-
-ds = Dataset()
+import gradio as gr
 
 
 def get_device():
@@ -31,8 +30,9 @@ class PaliGemma:
             device_map=self.device,
             revision="bfloat16",
         ).eval()
+        self.ds = Dataset()
         self.processor = AutoProcessor.from_pretrained("google/paligemma-3b-mix-224")
-        self.options = ds.categories
+        self.options = self.ds.categories
         self.prompt = f"which of these categories: {self.options.keys()} better describes the object in the image?"
 
     def generate(self, image: np.ndarray):
@@ -51,3 +51,50 @@ class PaliGemma:
     def crop_box(self, image: np.ndarray, box: list[int]):
         x1, y1, x2, y2 = box
         return image[y1:y2, x1:x2]
+
+    def interface(self):
+        from prompts import Dataset
+        from gradiops.ops import to_annotations
+
+        ds = self.ds
+
+        def generate(image: np.ndarray, prompt: str):
+            model_inputs = self.processor(
+                text=prompt, images=image, return_tensors="pt"
+            ).to(self.model.device)
+            input_len = model_inputs["input_ids"].shape[-1]
+            with torch.inference_mode():
+                generation = self.model.generate(
+                    **model_inputs, max_new_tokens=100, do_sample=False
+                )
+                generation = generation[0][input_len:]
+                decoded = self.processor.decode(generation, skip_special_tokens=True)
+
+            print("decoded", decoded)
+            return str(decoded)
+
+        with gr.Blocks() as demo:
+            with gr.Row():
+                with gr.Column():
+                    image = gr.Image()
+                    start = gr.Button("Predict")
+
+                with gr.Column():
+                    prompt = gr.Textbox(label="Prompt")
+
+            with gr.Row():
+                output = gr.Textbox(label="Output", interactive=False)
+
+            start.click(generate, inputs=[image, prompt], outputs=[output])
+
+        self.demo = demo
+
+
+def demo():
+    gemma = PaliGemma()
+    gemma.interface()
+    gemma.demo.launch()
+
+
+if __name__ == "__main__":
+    demo()

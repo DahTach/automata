@@ -13,6 +13,7 @@ from PIL import Image
 import utils
 import operations.nms as detops
 from typing import Tuple, List
+import gradio as gr
 
 # TODO: check all devices and make sure they are on the same device
 
@@ -137,8 +138,62 @@ class Dino:
                     torch.cat([predictions[id][1], valid_scores]),
                 )
 
+        return predictions
+
+    def predict_and_clean(
+        self,
+        image: np.ndarray,
+        prompts: dict[int, list[str]],
+        box_threshold: float = 0.15,
+        text_threshold: float = 0.15,
+    ):
+        """
+        Args:
+            - image: np.ndarray
+            - prompts: dict[int, list[str]]
+            - box_threshold: float
+            - text_threshold: float
+        """
+
+        h, w, _ = image.shape
+
+        predictions = {
+            id: (torch.tensor([]).to(self.device), torch.tensor([]).to(self.device))
+            for id in prompts.keys()
+        }
+
+        for id, aliases in prompts.items():
+            for alias in aliases:
+                if alias == "":
+                    continue
+                boxes, scores = self.model.predict(
+                    image=image,
+                    prompt=alias,
+                    box_threshold=box_threshold,
+                    text_threshold=text_threshold,
+                )
+
+                # Convert boxes to xyxy format
+                boxes = torchvision.ops.box_convert(boxes, "cxcywh", "xyxy")
+
+                # Denormalize boxes coordinates
+                boxes = boxes * torch.tensor([w, h, w, h], dtype=torch.float32).to(
+                    boxes.device
+                )
+
+                # Apply NMS
+                valid_boxes, valid_scores = detops.nmsT(
+                    detections=(boxes, scores), shape=(h, w)
+                )
+
+                predictions[id] = (
+                    torch.cat([predictions[id][0], valid_boxes]),
+                    torch.cat([predictions[id][1], valid_scores]),
+                )
+
         # Apply oversuppression
         predictions = detops.oversuppression(predictions, (h, w))
+        # FIX: why is shit disappearing at random
 
         return predictions
 
@@ -178,6 +233,55 @@ class Dino:
         predictions[1] = torch.cat([predictions[1], valid_scores])
 
         return predictions
+
+    def interface(self):
+        from prompts import Dataset
+        from gradiops.ops import to_annotations
+
+        ds = Dataset()
+
+        def predict(image: np.ndarray, *captions: str):
+            class_captions = {i: [caption] for i, caption in enumerate(captions)}
+
+            predictions = self.predict(image, class_captions)
+            cleaned_predictions = self.predict_and_clean(image, class_captions)
+
+            dirty_annotated_image = (
+                image,
+                to_annotations(predictions, list(ds.classes.keys())),
+            )
+            clean_annotated_image = (
+                image,
+                to_annotations(cleaned_predictions, list(ds.classes.keys())),
+            )
+
+            return dirty_annotated_image, clean_annotated_image
+
+        with gr.Blocks() as demo:
+            with gr.Row():
+                with gr.Column():
+                    image = gr.Image()
+                    start = gr.Button("Predict")
+
+                with gr.Column():
+                    captions = []
+                    for name, idx in list(ds.classes.items()):
+                        t = gr.Textbox(
+                            placeholder=name,
+                            value=ds.captions.get(idx, ["no caption"])[0],
+                        )
+                        captions.append(t)
+
+            with gr.Row():
+                dirty_output = gr.AnnotatedImage()
+            with gr.Row():
+                clean_output = gr.AnnotatedImage()
+
+            start.click(
+                predict, inputs=[image, *captions], outputs=[dirty_output, clean_output]
+            )
+
+        self.demo = demo
 
 
 class DinoModel(Model):
@@ -241,3 +345,13 @@ class DinoModel(Model):
         boxes = outputs["pred_boxes"][0][mask]
 
         return boxes, scores[mask]
+
+
+def demo():
+    dino = Dino(size="small")
+    dino.interface()
+    dino.demo.launch()
+
+
+if __name__ == "__main__":
+    demo()
