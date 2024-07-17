@@ -7,6 +7,7 @@ import groundingdino.datasets.transforms as T
 import numpy as np
 import torch
 import torchvision
+import torchvision.ops as ops
 from PIL import Image
 
 
@@ -26,7 +27,8 @@ def preprocess_image(image_bgr: np.ndarray) -> torch.Tensor:
 def nmsT(
     detections: tuple[torch.Tensor, torch.Tensor],
     shape: Tuple[int, int],
-    iou_threshold: float = 0.5,
+    mask: torch.Tensor,
+    iou_threshold: float = 0.7,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Perform Non-Maximum Suppression on the detections
     Args:
@@ -50,18 +52,25 @@ def nmsT(
     valid_boxes = boxes[keep_indices]
     valid_scores = scores[keep_indices]
 
-    # # TODO: make another method for batch NMS, this overrides the batched overhead
-    # # Perform outlier removal on the filtered boxes
-    # keep_indices = remove_outliers(valid_boxes, shape)
-    #
-    # valid_boxes = valid_boxes[keep_indices]
-    # valid_scores = valid_scores[keep_indices]
-    #
-    # # Perform containment removal on the filtered boxes
-    # keep_indices = remove_contained(valid_boxes)
-    #
-    # valid_boxes = valid_boxes[keep_indices]
-    # valid_scores = valid_scores[keep_indices]
+    # TODO: make another method for batch NMS, this overrides the batchd
+
+    # Perform outlier removal on the filtered boxes
+    keep_indices = remove_outliers(valid_boxes, shape)
+
+    valid_boxes = valid_boxes[keep_indices]
+    valid_scores = valid_scores[keep_indices]
+
+    # Perform containment removal on the filtered boxes
+    keep_indices = remove_contained(valid_boxes)
+
+    valid_boxes = valid_boxes[keep_indices]
+    valid_scores = valid_scores[keep_indices]
+
+    # perform roi mask filtering
+    keep_indices = roi_mask(valid_boxes, mask)
+
+    valid_boxes = valid_boxes[keep_indices]
+    valid_scores = valid_scores[keep_indices]
 
     return valid_boxes, valid_scores
 
@@ -145,10 +154,69 @@ def roi(
     return valid_box, valid_score
 
 
+def roi_mask(
+    boxes: torch.Tensor,
+    mask: torch.Tensor,
+    threshold: float = 0.5,
+) -> torch.Tensor:
+    """Perform Mask based Region of Interest (ROI) filtering on the detections
+    Args:
+        boxes: list of boxes (x1, y1, x2, y2) torch tensor
+        mask: mask defining the ROI (0 for outside, 1 for inside), same size as the image
+        threshold: threshold for the box to be considered within the mask
+    Returns:
+        keep_indices: indices of the boxes within the mask
+    """
+
+    # Calculate the mean values of the mask regions for each box
+    mean_values = torch.tensor(
+        [mask[box[1] : box[3], box[0] : box[2]].float().mean() for box in boxes.int()],
+        device=boxes.device,
+    )
+
+    # Determine which boxes to keep based on the mean values and the threshold
+    keep_indices = mean_values >= threshold
+
+    return keep_indices
+
+
+def class_agnostic_nms(
+    input_predictions: dict[int, tuple[torch.Tensor, torch.Tensor]],
+    threshold: float = 0.7,
+) -> dict[int, tuple[torch.Tensor, torch.Tensor]]:
+    preds = copy.deepcopy(input_predictions)
+
+    list_boxes, list_scores = zip(*preds.values())
+
+    # Concatenate the boxes and scores
+    all_boxes = torch.cat(list_boxes, dim=0)
+    all_scores = torch.cat(list_scores, dim=0)
+
+    # Perform NMS
+    valid_indices = torchvision.ops.nms(all_boxes, all_scores, threshold)
+    valid = torch.zeros(len(all_boxes), dtype=torch.bool)
+    valid[valid_indices] = True
+
+    # Calculate the split sizes based on the lengths of boxes for each class
+    split_sizes = [len(boxes) for boxes in list_boxes]
+
+    # Split the valid_indices to separate the boxes from the various classes
+    split_indices = torch.split(valid, split_sizes, dim=0)
+
+    # Filter the boxes and scores using the valid_indices
+    for i, (key, (boxes, scores)) in enumerate(preds.items()):
+        keep_mask = split_indices[i]
+        filtered_boxes = boxes[keep_mask]
+        filtered_scores = scores[keep_mask]
+        preds[key] = (filtered_boxes, filtered_scores)
+
+    return preds
+
+
 def oversuppression(
     input_predictions: dict[int, tuple[torch.Tensor, torch.Tensor]],
     shape: Tuple[int, int],
-    threshold: float = 0.5,
+    threshold: float = 0.7,
 ) -> dict[int, tuple[torch.Tensor, torch.Tensor]]:
     """
     Removes overlapping boxes with lower normalized scores.
@@ -179,11 +247,28 @@ def oversuppression(
         if scores2.numel() > 0:  # Check if scores2 is not empty
             scores2 = scores2 / scores2.max()
 
-        # Remove contained boxes before NMS
-        keep1 = remove_contained(boxes1)
-        keep2 = remove_contained(boxes2)
+        # Remove outliers and contained boxes before NMS
+
+        # Perform outlier removal on the filtered boxes
+        liers1 = remove_outliers(boxes1, shape)
+        liers2 = remove_outliers(boxes2, shape)
+
+        boxes1 = boxes1[liers1]
+        scores1 = scores1[liers1]
+        boxes2 = boxes2[liers2]
+        scores2 = scores2[liers2]
+
+        # Join the boxes
+        keep = remove_contained(torch.cat((boxes1, boxes2), dim=0))
+
+        # Split the keep indices to separate the boxes from the two classes
+        keep1 = keep[: len(boxes1)]
+        keep2 = keep[len(boxes1) :]
+
+        # Filter the boxes and scores using the valid_indices
         boxes1 = boxes1[keep1]
         scores1 = scores1[keep1]
+
         boxes2 = boxes2[keep2]
         scores2 = scores2[keep2]
 
@@ -205,15 +290,38 @@ def oversuppression(
         filtered_boxes2 = all_boxes[valid_indices][valid_indices2]
         filtered_scores2 = all_scores[valid_indices][valid_indices2]
 
-        # Perform outlier removal on the filtered boxes
-        liers1 = remove_outliers(filtered_boxes1, shape)
-        liers2 = remove_outliers(filtered_boxes2, shape)
-
         # Filter again to get the final boxes and scores after outlier removal
-        predictions[key1] = (filtered_boxes1[liers1], filtered_scores1[liers1])
-        predictions[key2] = (filtered_boxes2[liers2], filtered_scores2[liers2])
+        predictions[key1] = (filtered_boxes1, filtered_scores1)
+        predictions[key2] = (filtered_boxes2, filtered_scores2)
 
     return predictions
+
+
+def remove_big_boxes(boxes: torch.Tensor, max_size: float) -> torch.Tensor:
+    """
+    Remove every box from ``boxes`` which contains at least one side length
+    that is bigger than ``max_size``.
+
+    .. note::
+        For sanitizing a :class:`~torchvision.tv_tensors.BoundingBoxes` object, consider using
+        the transform :func:`~torchvision.transforms.v2.SanitizeBoundingBoxes` instead.
+
+    Args:
+        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+            with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+        max_size (float): maximum size
+
+    Returns:
+        Tensor[K]: indices of the boxes that have both sides
+        smaller than ``max_size``
+    """
+
+    ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
+
+    keep = (ws <= max_size) & (hs <= max_size)
+    keep = torch.where(keep)[0]
+
+    return keep
 
 
 def remove_outliers(boxes: torch.Tensor, shape: Tuple[int, int], threshold=0.6):
@@ -226,37 +334,76 @@ def remove_outliers(boxes: torch.Tensor, shape: Tuple[int, int], threshold=0.6):
         list of boxes after removing outliers
     """
 
-    # remove boxes with width or height more than 0.4 of the image size
-    box_width = boxes[:, 2] - boxes[:, 0]
-    box_height = boxes[:, 3] - boxes[:, 1]
-    box_width = box_width / shape[1]
-    box_height = box_height / shape[0]
+    max_size = min(shape) * threshold
 
-    bigger_indices = (box_width > threshold) | (box_height > threshold)
-    return ~bigger_indices
+    return remove_big_boxes(boxes, max_size)
 
 
-def remove_contained(boxes: torch.Tensor, threshold=0.1):
+def box_ioa(boxes1: torch.Tensor, boxes2: torch.Tensor, area_type="min"):
+    """
+    Return intersection-over-area (Jaccard index) between two sets of boxes.
+
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise IoA values for every element in boxes1 and boxes2
+    """
+
+    def _upcast(t: torch.Tensor) -> torch.Tensor:
+        # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+        if t.is_floating_point():
+            return t if t.dtype in (torch.float32, torch.float64) else t.float()
+        else:
+            return t if t.dtype in (torch.int32, torch.int64) else t.int()
+
+    area1 = ops.box_area(boxes1)
+    area2 = ops.box_area(boxes2)
+
+    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+    wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
+    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+
+    if area_type == "max":
+        area = torch.max(area1[:, None], area2)  # [N,M]
+    else:
+        area = torch.min(area1[:, None], area2)  # [N,M]
+
+    ioa = inter / area
+
+    return ioa
+
+
+def remove_contained(boxes: torch.Tensor, threshold=0.9):
     """Remove boxes that are contained in other boxes over a certain threshold
     Args:
         boxes: list of boxes
         threshold: threshold for removing inside boxes
     Returns:
-        list of boxes after removing inside boxes
+        list of boxes indices after removing inside boxes
     """
-    # FIX: Does not remove boxes that are contained in other boxes
-    keep = torch.ones(len(boxes), dtype=torch.bool)
-    for i, box1 in enumerate(boxes):
-        for j, box2 in enumerate(boxes):
-            if i != j:
-                if (
-                    box1[0] >= box2[0] * threshold
-                    and box1[1] >= box2[1] * threshold
-                    and box1[2] <= box2[2] * threshold
-                    and box1[3] <= box2[3] * threshold
-                ):
-                    keep[i] = False
-                    break
+
+    if len(boxes) < 2:
+        return torch.ones(len(boxes), dtype=torch.bool)
+
+    # Compute the IoAmin between all pairs of boxes
+    ioas = box_ioa(boxes, boxes, "min")
+
+    # Remove the diagonal (self-intersection)
+    ioas.fill_diagonal_(0)
+
+    # Find the boxes that are contained in other boxes
+    inter = ioas > threshold
+
+    # Find the boxes that are not contained in any other boxes
+    keep = ~inter.any(dim=1)
+
     return keep
 
 

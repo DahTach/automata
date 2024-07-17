@@ -14,19 +14,22 @@ def to_annotations(
         annotations: List[Annotation] = [(Mask, str)] where mask: Tuple[int, int, int, int] and str is the class name
     """
 
-    def safe_list_get(lis, idx, default="unknown"):
+    def safe_list_get(lst, idx, default="unknown"):
         try:
-            return lis[idx]
+            return lst[idx]
         except IndexError:
+            print(f"Could not get annotation string for: {idx} from list {lst}")
             return default
 
     annotations = []
-    for id, (boxes, scores) in predictions.items():
+    for id, (boxes, _) in predictions.items():
         if boxes.numel() == 0:
-            return []
+            continue
         elif boxes.ndim == 1:
             boxes = boxes.unsqueeze(0)
+
         class_name = safe_list_get(classes, id)
+
         for i, box in enumerate(boxes):
             annotations.append((box.int().tolist(), f"{class_name} {i}"))
 

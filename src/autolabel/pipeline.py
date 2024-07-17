@@ -57,6 +57,7 @@ class Pipeline:
         Returns:
             box: tensor of the pallet bounding box in xyxy format
         """
+        # FIX: detection of pallets for vertical framing is shit
         boxes, scores = self.dino.infer(image, prompt)
         box, _ = roi(detections=(boxes, scores), v_lines=(0, 2200))
         return box
@@ -99,6 +100,8 @@ class Pipeline:
         pallet = self.pallet(image, "loaded pallet")
         refsys = pallet[0].int().tolist()
         pallet_img = self.crop(image, refsys)
+
+        # TODO: detections need to be cleaned better
         detections = self.dino.predict(
             pallet_img, prompts
         )  # prompts: dict[int, list[str]],
@@ -110,8 +113,9 @@ class Pipeline:
     def pipeline(self, images: list[Path], prompts: dict[int, list[str]]):
         for image in tqdm(images):
             img = cv.imread(str(image))
+            h, w = img.shape[:2]
             detections = self.pipe(img, prompts)
-            self.write_labels(detections, image)
+            self.write_labels(detections, image, (h, w))
 
     def det_refsys(
         self,

@@ -104,6 +104,10 @@ class Dino:
 
         h, w, _ = image.shape
 
+        mask_img = "/Users/francescotacinelli/Developer/datasets/pallets/masks/top/top_fill.png"
+
+        mask = torch.Tensor(cv.imread(mask_img, 0))
+
         predictions = {
             id: (torch.tensor([]).to(self.device), torch.tensor([]).to(self.device))
             for id in prompts.keys()
@@ -130,7 +134,7 @@ class Dino:
 
                 # Apply NMS
                 valid_boxes, valid_scores = detops.nmsT(
-                    detections=(boxes, scores), shape=(h, w)
+                    detections=(boxes, scores), shape=(h, w), mask=mask
                 )
 
                 predictions[id] = (
@@ -162,6 +166,10 @@ class Dino:
             for id in prompts.keys()
         }
 
+        mask_img = "/Users/francescotacinelli/Developer/datasets/pallets/masks/top/top_fill.png"
+
+        mask = torch.Tensor(cv.imread(mask_img, 0))
+
         for id, aliases in prompts.items():
             for alias in aliases:
                 if alias == "":
@@ -183,7 +191,7 @@ class Dino:
 
                 # Apply NMS
                 valid_boxes, valid_scores = detops.nmsT(
-                    detections=(boxes, scores), shape=(h, w)
+                    detections=(boxes, scores), shape=(h, w), mask=mask
                 )
 
                 predictions[id] = (
@@ -192,8 +200,8 @@ class Dino:
                 )
 
         # Apply oversuppression
-        predictions = detops.oversuppression(predictions, (h, w))
-        # FIX: why is shit disappearing at random
+        # predictions = detops.oversuppression(predictions, (h, w))
+        predictions = detops.class_agnostic_nms(predictions)
 
         return predictions
 

@@ -64,6 +64,10 @@ class Dataset:
         }
         self.prompt = f"which of these categories: {self.categories.keys()} better describes the object in the image?"
         self.sample_images = get_images_path(Path("data/images"))
+        self.masks = {
+            "top": "/Users/francescotacinelli/Developer/datasets/pallets/masks/top/top_fill.png",
+            "back": "/Users/francescotacinelli/Developer/datasets/pallets/masks/back/back_fill.png",
+        }
 
     def load(self):
         with open(self.path, "r") as f:
