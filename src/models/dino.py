@@ -91,7 +91,7 @@ class Dino:
         self,
         image: np.ndarray,
         prompts: dict[int, list[str]],
-        box_threshold: float = 0.15,
+        box_threshold: float = 0.10,
         text_threshold: float = 0.15,
     ):
         """
@@ -133,7 +133,7 @@ class Dino:
                 )
 
                 # Apply NMS
-                valid_boxes, valid_scores = detops.nmsT(
+                valid_boxes, valid_scores = detops.nmsTest(
                     detections=(boxes, scores), shape=(h, w), mask=mask
                 )
 
@@ -148,7 +148,7 @@ class Dino:
         self,
         image: np.ndarray,
         prompts: dict[int, list[str]],
-        box_threshold: float = 0.15,
+        box_threshold: float = 0.10,
         text_threshold: float = 0.15,
     ):
         """

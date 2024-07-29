@@ -24,6 +24,63 @@ def preprocess_image(image_bgr: np.ndarray) -> torch.Tensor:
     return image_transformed
 
 
+def nmsTest(
+    detections: tuple[torch.Tensor, torch.Tensor],
+    shape: Tuple[int, int],
+    mask: torch.Tensor,
+    iou_threshold: float = 0.7,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Perform Non-Maximum Suppression on the detections
+    Args:
+        detections: tuple of detections (boxes, scores, class_ids)
+        iou_threshold: IoU threshold for NMS
+    Returns:
+        list of detections after NMS
+    """
+    boxes, scores = detections
+
+    if boxes.device != scores.device:
+        prefered_device = (
+            boxes.device if boxes.device != torch.device("cpu") else scores.device
+        )
+        boxes = boxes.to(prefered_device)
+
+    # Perform NMS
+    keep_indices = torchvision.ops.nms(boxes, scores, iou_threshold).long()
+
+    # Filter the detections with the keep_indices
+    boxes = boxes[keep_indices]
+    scores = scores[keep_indices]
+
+    # Perform outlier removal on the filtered boxes
+    keep_indices = remove_outliers(boxes, shape)
+
+    boxes = boxes[keep_indices]
+    scores = scores[keep_indices]
+
+    # Perform containment removal on the filtered boxes
+    keep_indices = remove_contained(boxes)
+
+    boxes = boxes[keep_indices]
+    scores = scores[keep_indices]
+
+    # perform roi mask filtering
+    keep_indices = roi_mask(boxes, mask)
+
+    valid_boxes = boxes[keep_indices]
+    valid_scores = scores[keep_indices]
+
+    return valid_boxes, valid_scores
+
+def remove_outliers_scores(scores: torch.Tensor) -> torch.Tensor:
+
+    # Remove lower scores outliers
+    mean = scores.mean()
+    std = scores.std()
+    threshold = mean - 1.6 * std
+    keep_indices = scores > threshold
+    return keep_indices
+
 def nmsT(
     detections: tuple[torch.Tensor, torch.Tensor],
     shape: Tuple[int, int],
@@ -57,6 +114,11 @@ def nmsT(
     # Perform outlier removal on the filtered boxes
     keep_indices = remove_outliers(valid_boxes, shape)
 
+    valid_boxes = valid_boxes[keep_indices]
+    valid_scores = valid_scores[keep_indices]
+
+    # Remove scores outliers
+    keep_indices = remove_outliers_scores(valid_scores)
     valid_boxes = valid_boxes[keep_indices]
     valid_scores = valid_scores[keep_indices]
 
@@ -182,8 +244,10 @@ def roi_mask(
 
 def class_agnostic_nms(
     input_predictions: dict[int, tuple[torch.Tensor, torch.Tensor]],
-    threshold: float = 0.7,
+    threshold: float = 0.9,
 ) -> dict[int, tuple[torch.Tensor, torch.Tensor]]:
+    # FIX: this removes good boxes
+
     preds = copy.deepcopy(input_predictions)
 
     list_boxes, list_scores = zip(*preds.values())
@@ -354,6 +418,13 @@ def box_ioa(boxes1: torch.Tensor, boxes2: torch.Tensor, area_type="min"):
         Tensor[N, M]: the NxM matrix containing the pairwise IoA values for every element in boxes1 and boxes2
     """
 
+    if not isinstance(boxes1, torch.Tensor) or not isinstance(boxes2, torch.Tensor):
+        raise TypeError("Inputs must be torch.Tensor")
+    if boxes1.dim() != 2 or boxes2.dim() != 2 or boxes1.shape[1] != 4 or boxes2.shape[1] != 4:
+        raise ValueError("Inputs must be 2D tensors with shape (N, 4)")
+    if area_type not in ["min", "max"]:
+        raise ValueError("area_type must be 'min' or 'max'")
+
     def _upcast(t: torch.Tensor) -> torch.Tensor:
         # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
         if t.is_floating_point():
@@ -370,10 +441,13 @@ def box_ioa(boxes1: torch.Tensor, boxes2: torch.Tensor, area_type="min"):
     wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
     inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
 
+    area1_expanded = area1[:, None].expand(area1.size(0), area2.size(0))
+    area2_expanded = area2[None, :].expand(area1.size(0), area2.size(0))
+
     if area_type == "max":
-        area = torch.max(area1[:, None], area2)  # [N,M]
-    else:
-        area = torch.min(area1[:, None], area2)  # [N,M]
+        area = torch.max(area1_expanded, area2_expanded)
+    else:  # area_type == "min"
+        area = torch.min(area1_expanded, area2_expanded)
 
     ioa = inter / area
 
@@ -388,6 +462,7 @@ def remove_contained(boxes: torch.Tensor, threshold=0.9):
     Returns:
         list of boxes indices after removing inside boxes
     """
+    # TODO: there's room for improvement here
 
     if len(boxes) < 2:
         return torch.ones(len(boxes), dtype=torch.bool)
