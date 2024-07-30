@@ -104,7 +104,7 @@ class Dino:
 
         h, w, _ = image.shape
 
-        mask_img = "/Users/francescotacinelli/Developer/datasets/pallets/masks/top/top_fill.png"
+        mask_img = "../../data/masks/top_fill.png"
 
         mask = torch.Tensor(cv.imread(mask_img, 0))
 
@@ -166,7 +166,7 @@ class Dino:
             for id in prompts.keys()
         }
 
-        mask_img = "/Users/francescotacinelli/Developer/datasets/pallets/masks/top/top_fill.png"
+        mask_img = "../../data/masks/top_fill.png"
 
         mask = torch.Tensor(cv.imread(mask_img, 0))
 

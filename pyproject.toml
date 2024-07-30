@@ -36,4 +36,4 @@ distribution = true
 visionapi = "automata.visionAPI:run"
 tune = "automata.autotune.tuner:run"
 automata = "automata.interface:run"
-label = "automata.autolabel.labeler:run"
+label = "autolabel.labeler:run"
