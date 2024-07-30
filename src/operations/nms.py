@@ -72,14 +72,15 @@ def nmsTest(
 
     return valid_boxes, valid_scores
 
-def remove_outliers_scores(scores: torch.Tensor) -> torch.Tensor:
 
+def remove_outliers_scores(scores: torch.Tensor) -> torch.Tensor:
     # Remove lower scores outliers
     mean = scores.mean()
     std = scores.std()
     threshold = mean - 1.6 * std
     keep_indices = scores > threshold
     return keep_indices
+
 
 def nmsT(
     detections: tuple[torch.Tensor, torch.Tensor],
@@ -219,7 +220,7 @@ def roi(
 def roi_mask(
     boxes: torch.Tensor,
     mask: torch.Tensor,
-    threshold: float = 0.5,
+    threshold: float = 0.3,
 ) -> torch.Tensor:
     """Perform Mask based Region of Interest (ROI) filtering on the detections
     Args:
@@ -420,7 +421,12 @@ def box_ioa(boxes1: torch.Tensor, boxes2: torch.Tensor, area_type="min"):
 
     if not isinstance(boxes1, torch.Tensor) or not isinstance(boxes2, torch.Tensor):
         raise TypeError("Inputs must be torch.Tensor")
-    if boxes1.dim() != 2 or boxes2.dim() != 2 or boxes1.shape[1] != 4 or boxes2.shape[1] != 4:
+    if (
+        boxes1.dim() != 2
+        or boxes2.dim() != 2
+        or boxes1.shape[1] != 4
+        or boxes2.shape[1] != 4
+    ):
         raise ValueError("Inputs must be 2D tensors with shape (N, 4)")
     if area_type not in ["min", "max"]:
         raise ValueError("area_type must be 'min' or 'max'")

@@ -60,7 +60,7 @@ class Dataset:
             "plastic caps": 1,
             "cardboard box": 2,
             "tin cans": 3,
-            "metal keg or gas canister": 4,
+            "keg or gas canister": 4,
         }
         self.prompt = f"which of these categories: {self.categories.keys()} better describes the object in the image?"
         self.sample_images = get_images_path(Path("data/images"))

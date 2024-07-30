@@ -45,12 +45,17 @@ class Prophet:
             else:
                 raise ValueError(f"Model {model} not found")
 
-    def predict(self, image: np.ndarray):
-        detections = self.dino.predict(image, self.prompts)
+    def predict_compare(self, image: np.ndarray):
+        detections = self.dino.predict_and_clean(image, self.prompts)
 
-        prophesies, comparison = self.prophesy(image, detections)
+        prophesies, comparison = self.prophesy_comparison(image, detections)
 
         return detections, prophesies, comparison
+
+    def predict(self, image: np.ndarray):
+        detections = self.dino.predict_and_clean(image, self.prompts)
+        prophesies = self.prophesy(image, detections)
+        return prophesies
 
     # def pred_seg(self, image: np.ndarray):
     #     predictions = self.dino.predict(image, self.prompts)
@@ -88,6 +93,33 @@ class Prophet:
         return len(self.options)
 
     def prophesy(
+        self,
+        image: np.ndarray,
+        cleaned_predictions: dict[int, tuple[torch.Tensor, torch.Tensor]],
+    ):
+        prophesies = {
+            i: (torch.tensor([]).to(self.device), torch.tensor([]).to(self.device))
+            for i in range(len(self.options.keys()) + 1)
+        }
+
+        for boxes, scores in cleaned_predictions.values():
+            for box, score in zip(boxes, scores):
+                # for idx in range(boxes.shape[0]):
+                # box = boxes[idx]
+                # score = scores[idx]
+
+                img = self.oracle.crop_box(image, [int(i) for i in box])
+                prophecy = self.oracle.generate(img)
+                class_id = self.prophecy_id(prophecy)
+
+                prophesies[class_id] = (
+                    torch.cat((prophesies[class_id][0], box.view(1, -1))),
+                    torch.cat((prophesies[class_id][1], score.view(1))),
+                )
+
+        return prophesies
+
+    def prophesy_comparison(
         self,
         image: np.ndarray,
         cleaned_predictions: dict[int, tuple[torch.Tensor, torch.Tensor]],

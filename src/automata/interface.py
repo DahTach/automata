@@ -18,7 +18,12 @@ class Interface:
         print("Models loaded!")
 
     def predict(self, image: np.ndarray):
-        detections, prophecies, comparison = self.prophet.predict(image)
+        prophecies = self.prophet.predict(image)
+        prophecies_annotations = grops.to_annotations(prophecies, ds.legend)
+        return image, prophecies_annotations
+
+    def predict_compare(self, image: np.ndarray):
+        detections, prophecies, comparison = self.prophet.predict_compare(image)
 
         prophecies_annotations = grops.to_annotations(prophecies, ds.legend)
         comparison_dataframe = grops.to_dataframe(comparison, ds.legend)
@@ -31,15 +36,16 @@ class Interface:
                 with gr.Column():
                     image = gr.Image()
                     start = gr.Button("Predict")
-                with gr.Column():
-                    comparison = gr.DataFrame()
+                # with gr.Column():
+                #     comparison = gr.DataFrame()
 
             with gr.Row():
                 output = gr.AnnotatedImage()
 
             demo.load(self.load_model)
 
-            start.click(self.predict, inputs=[image], outputs=[output, comparison])
+            start.click(self.predict, inputs=[image], outputs=[output])
+            # start.click(self.predict, inputs=[image], outputs=[output, comparison])
 
         self.demo = demo
 
